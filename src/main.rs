@@ -27,9 +27,10 @@ const DEFAULT_FONT: Option<&str> = Some("/Library/Fonts/Impact.ttf");
 const DEFAULT_FONT: Option<&str> = None;
 
 fn main() {
-    // I don't know what the last value in this array is.
-    let white_pixel = Rgba([255, 255, 255, 0]);
-    let black_pixel = Rgba([0, 255, 0, 0]);
+    // The final value in the array here is the *opacity* of the pixel. Not the transparency.
+    // Apparently, this is not CSS...
+    let white_pixel = Rgba([255, 255, 255, 255]);
+    let black_pixel = Rgba([0, 0, 0, 255]);
 
     let (image_path, text) = match read_command() {
         Some(command) => command,
@@ -49,7 +50,7 @@ fn main() {
 
     // Not sure what the &[u8] thing is for, but that was in the example on PistonDevelopers.
     // I'm guessing that's to prevent the font from blowing the stack frame if it's too large.
-    // Furthermore, I'm stealing this font from the Mac Sierra shared font folder, so there is 
+    // Furthermore, I'm stealing this font from the Mac Sierra shared font folder, so there is
     // exactly zero chance of this compiling on Windows right now.
     let font = read_font(DEFAULT_FONT);
     let height = pixels.height() as f32 / 10.0;
@@ -72,23 +73,31 @@ fn main() {
     let (width, height) = pixels.dimensions();
 
     // What follows is a little fourth grade math that attempts to stick the text at the center
-    // of the bottom fifth of the image.
+    // of the bottom fifth of the image. This, by the way, is the closest I have ever come to 
+    // using anything I learned in Mrs. Vye's 9th grade keyboarding class. Thank God for the 
+    // IBM Selectric III, huh?
     let x = (width / 2) - (text_width / 2);
     let y = height - ((height / 5) - (text_height / 2));
 
-    let mut scratch = image::ImageBuffer::from_pixel(text_width, text_height, black_pixel);
+    let mut scratch = image::ImageBuffer::from_fn(text_width, text_height, |_, _| black_pixel);
 
     drawing::draw_text_mut(&mut scratch, white_pixel, 0, 0, scale, &font, &text);
     drawing::draw_text_mut(&mut pixels, white_pixel, x, y, scale, &font, &text);
 
+    // Here I set the "low threshold" and the "high threshold" for edge detection to 0.5 I have
+    // not the first fucking clue what either of these thresholds is for or what sort of values
+    // they might accept. I can only assume that even a drunk wallaby could detect these edges.
+    let gray = imageproc::edges::canny(&image::imageops::grayscale(&scratch), 255.0, 255.0);
+
+    save("edges.png", &DynamicImage::ImageLuma8(gray));
     save("scratch.png", &DynamicImage::ImageRgba8(scratch));
     save("output.png", &pixels);
 }
 
 /// Calculate the dimensions of the bounding box for a given string, font, and scale.
 ///
-/// This works by summing the "advance width" of each glyph in the text, entirely ignoring 
-/// kerning as each character is considered in isolation. Because this is used primarily to 
+/// This works by summing the "advance width" of each glyph in the text, entirely ignoring
+/// kerning as each character is considered in isolation. Because this is used primarily to
 /// center text in the image, it's close enough for government work.
 fn text_size(s: &str, font: &[u8], scale: Scale) -> (u32, u32) {
     use rusttype::{FontCollection, VMetrics};
