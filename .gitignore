@@ -1,3 +1,5 @@
 /target/
 **/*.rs.bk
 *.png
+*.jpg
+Thumbs.db
