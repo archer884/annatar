@@ -13,8 +13,9 @@ extern crate image;
 extern crate imageproc;
 extern crate rusttype;
 
-use image::{DynamicImage, GenericImage, ImageFormat, Rgba};
+use image::{DynamicImage, GenericImage, ImageFormat, Luma, Rgba};
 use imageproc::drawing;
+use imageproc::rect::Rect;
 use rusttype::Scale;
 
 #[cfg(windows)]
@@ -53,7 +54,7 @@ fn main() {
     // Furthermore, I'm stealing this font from the Mac Sierra shared font folder, so there is
     // exactly zero chance of this compiling on Windows right now.
     let font = read_font(DEFAULT_FONT);
-    let height = pixels.height() as f32 / 10.0;
+    let scale_factor = pixels.height() as f32 / 10.0;
 
     // This scales the font size itself. Using the same multiplier for both just makes it bigger
     // as the multiplier increases. Making X larger makes the font wider, while making Y larger
@@ -62,7 +63,7 @@ fn main() {
     // let scale = Scale { x: height, y: height };
     //
     // The above form is equivalent to what I'm currently using:
-    let scale = Scale::uniform(height);
+    let scale = Scale::uniform(scale_factor);
 
     // Apparently, `Scale` is copy.
     let (text_width, text_height) = text_size(&text, &font, scale);
@@ -79,17 +80,28 @@ fn main() {
     let x = (width / 2) - (text_width / 2);
     let y = height - ((height / 5) - (text_height / 2));
 
-    let mut scratch = image::ImageBuffer::from_fn(text_width, text_height, |_, _| black_pixel);
-
+    let mut scratch = image::ImageBuffer::from_pixel(text_width, text_height, black_pixel);
     drawing::draw_text_mut(&mut scratch, white_pixel, 0, 0, scale, &font, &text);
-    drawing::draw_text_mut(&mut pixels, white_pixel, x, y, scale, &font, &text);
 
     // Here I set the "low threshold" and the "high threshold" for edge detection to 0.5 I have
     // not the first fucking clue what either of these thresholds is for or what sort of values
     // they might accept. I can only assume that even a drunk wallaby could detect these edges.
-    let gray = imageproc::edges::canny(&image::imageops::grayscale(&scratch), 255.0, 255.0);
+    for (idx, &pixel) in imageproc::edges::canny(&image::imageops::grayscale(&scratch), 255.0, 255.0).pixels().enumerate() {
+        if Luma([255u8]) == pixel {
+            let idx = idx as u32;
+            let x = idx % text_width + x;
+            let y = idx / text_width + y;
 
-    save("edges.png", &DynamicImage::ImageLuma8(gray));
+            // I bet this isn't cheap, but... meh.
+            let rect = Rect::square(x as i32, y as i32, (0.1 * scale_factor) as u32);
+            drawing::draw_filled_rect_mut(&mut pixels, rect, Rgba([0, 0, 0, 255]));
+        }
+    }
+
+    drawing::draw_text_mut(&mut pixels, white_pixel, x, y, scale, &font, &text);
+    
+    // Here I'm printing the scratch image used for edge detection. This is pretty much just as
+    // a smoke test; I'll get around to pulling it out of here eventually.
     save("scratch.png", &DynamicImage::ImageRgba8(scratch));
     save("output.png", &pixels);
 }
