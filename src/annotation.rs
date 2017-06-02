@@ -1,5 +1,5 @@
 use application::AppRunError;
-use image::{DynamicImage, GenericImage, ImageBuffer, imageops, Luma, Rgba, RgbaImage};
+use image::{DynamicImage, FilterType, GenericImage, ImageBuffer, imageops, Luma, Rgba, RgbaImage};
 use imageproc::{drawing, edges};
 use imageproc::rect::Rect;
 use rusttype::{Font, Scale};
@@ -66,43 +66,47 @@ fn render_caption_bottom<'a>(text: &'a Text, pixels: &'a mut DynamicImage, font:
     let black_pixel = Rgba([0, 0, 0, 255]);
     
     let scale = Scale::uniform(scale_factor);
+    let scale_4x = Scale::uniform(scale_factor * 4.0);
     let (width, height) = pixels.dimensions();
     let (text_width, text_height) = text_size(&text.content, font, scale);
 
-    // What follows is a little fourth grade math that attempts to stick the text at the center
-    // of the bottom fifth of the image. This, by the way, is the closest I have ever come to 
-    // using anything I learned in Mrs. Vye's 9th grade keyboarding class. Thank God for the 
-    // IBM Selectric III, huh?
-    let x = (width / 2) - (text_width / 2);
-    let y = height - ((height / 5) - (text_height / 2));
+    // To reduce the janky jagginess of the black border around each letter, we want to render the 
+    // words themselves at 4x resolution and then paste that on top of the existing image.
+    let x = ((width / 2) - (text_width / 2)) * 4;
+    let y = (height - ((height / 5) - (text_height / 2))) * 4;
 
-    let mut edge_rendering = ImageBuffer::from_pixel(text_width, text_height, black_pixel);
+    let mut edge_rendering = ImageBuffer::from_pixel(text_width * 4, text_height * 4, black_pixel);
     drawing::draw_text_with_font_mut(
-        &mut edge_rendering, white_pixel, 0, 0, scale, &font, &text.content
+        &mut edge_rendering, white_pixel, 0, 0, scale_4x, &font, &text.content
     );
-    
-    // These thresholds are black magic to me.
-    //
-    // A further note: this step is independent of text style, with the exception that, 
-    // obviously, we'll skip it if the user has requested no border.
-    for (idx, &pixel) in edges::canny(&imageops::grayscale(&edge_rendering), 255.0, 255.0).pixels().enumerate() {
-        if Luma([255u8]) == pixel {
+
+    // This is going to end up huge. -.-
+    let mut text_layer_4x = RgbaImage::new(width * 4, height * 4);
+    let edge_rendering = edges::canny(&imageops::grayscale(&edge_rendering), 245.0, 245.0);
+    let edge_pixels = edge_rendering.pixels().enumerate()
+        .filter(|&(_, &px)| Luma([255u8]) == px)
+        .map(|(idx, _)| {
             let idx = idx as u32;
-            let x = idx % text_width + x;
-            let y = idx / text_width + y;
+            let x = idx % (text_width * 4) + x;
+            let y = idx / (text_width * 4) + y;
+            (x, y)
+        });
 
-            // I bet this isn't cheap, but... meh.
-            let rect_size = (0.1 * scale_factor) as u32;
-            let offset = (rect_size / 2) as i32;
-            let rect = Rect::at(x as i32 - offset, y as i32 - offset)
-                .of_size(rect_size, rect_size);
-
-            drawing::draw_filled_rect_mut(pixels, rect, Rgba([0, 0, 0, 255]));
-        }
+    // I wonder how long this ends up taking. Seems like this would just have to be the slowest
+    // part of the process. Would be great to parallelize this somehow, but it would probably be
+    // pretty difficult to allow multiple mutable aliases, too...
+    let rect_size = (0.1 * scale_factor * 2.2) as u32;
+    let offset = (rect_size / 2) as i32;
+    for (x, y) in edge_pixels {
+        let rect = Rect::at(x as i32 - offset, y as i32 - offset).of_size(rect_size, rect_size);
+        drawing::draw_filled_rect_mut(&mut text_layer_4x, rect, black_pixel);
     }
 
-    drawing::draw_text_with_font_mut(pixels, white_pixel, x, y, scale, &font, &text.content);
-    Ok(edge_rendering)
+    drawing::draw_text_with_font_mut(&mut text_layer_4x, white_pixel, x, y, scale_4x, &font, &text.content);
+    
+    let downsampled_text = imageops::resize(&text_layer_4x, width, height, FilterType::CatmullRom);
+    imageops::overlay(pixels, &mut DynamicImage::ImageRgba8(downsampled_text), 0, 0);
+    Ok(text_layer_4x)
 }
 
 /// Calculate the dimensions of the bounding box for a given string, font, and scale.
