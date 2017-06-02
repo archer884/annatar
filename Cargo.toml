@@ -1,9 +1,10 @@
 [package]
 name = "annatar"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["J/A <archer884@gmail.com>"]
 
 [dependencies]
+clap = "*"
 image = "*"
-imageproc = { git = "https://github.com/archer884/imageproc", branch = "feature/new-rectangle" }
+imageproc = { git = "https://github.com/archer884/imageproc", branch = "annatar" }
 rusttype = "*"
