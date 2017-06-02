@@ -73,7 +73,11 @@ fn render_caption_bottom<'a>(text: &'a Text, pixels: &'a mut DynamicImage, font:
     // To reduce the janky jagginess of the black border around each letter, we want to render the 
     // words themselves at 4x resolution and then paste that on top of the existing image.
     let x = ((width / 2) - (text_width / 2)) * 4;
-    let y = (height - ((height / 5) - (text_height / 2))) * 4;
+    let y = {
+        let height = height as f32;
+        let text_height = text_height as f32;
+        (height - (text_height * 1.2)) as u32
+    } * 4;
 
     let mut edge_rendering = ImageBuffer::from_pixel(text_width * 4, text_height * 4, black_pixel);
     drawing::draw_text_with_font_mut(
