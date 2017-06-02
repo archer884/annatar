@@ -51,14 +51,6 @@ fn main() {
 
     let font = read_font(DEFAULT_FONT);
     let scale_factor = pixels.height() as f32 / 10.0;
-
-    // This scales the font size itself. Using the same multiplier for both just makes it bigger
-    // as the multiplier increases. Making X larger makes the font wider, while making Y larger
-    // makes the font taller.
-    //
-    // let scale = Scale { x: height, y: height };
-    //
-    // The above form is equivalent to what I'm currently using:
     let scale = Scale::uniform(scale_factor);
 
     // Apparently, `Scale` is copy.
@@ -79,9 +71,7 @@ fn main() {
     let mut scratch = image::ImageBuffer::from_pixel(text_width, text_height, black_pixel);
     drawing::draw_text_mut(&mut scratch, white_pixel, 0, 0, scale, &font, &text);
 
-    // Here I set the "low threshold" and the "high threshold" for edge detection to 0.5 I have
-    // not the first fucking clue what either of these thresholds is for or what sort of values
-    // they might accept. I can only assume that even a drunk wallaby could detect these edges.
+    // These thresholds are black magic to me.
     for (idx, &pixel) in imageproc::edges::canny(&image::imageops::grayscale(&scratch), 255.0, 255.0).pixels().enumerate() {
         if Luma([255u8]) == pixel {
             let idx = idx as u32;
@@ -94,6 +84,9 @@ fn main() {
         }
     }
 
+    // Each call to `draw_text_mut` rebuilds the font, which I already built once to determine the 
+    // size of the text field. This is a waste of time. I bet I can improve on draw_text_whatever 
+    // such that it accepts a realized font rather than a bag of bits.
     drawing::draw_text_mut(&mut pixels, white_pixel, x, y, scale, &font, &text);
     
     // Here I'm printing the scratch image used for edge detection. This is pretty much just as
