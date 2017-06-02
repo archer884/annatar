@@ -49,10 +49,6 @@ fn main() {
         }
     };
 
-    // Not sure what the &[u8] thing is for, but that was in the example on PistonDevelopers.
-    // I'm guessing that's to prevent the font from blowing the stack frame if it's too large.
-    // Furthermore, I'm stealing this font from the Mac Sierra shared font folder, so there is
-    // exactly zero chance of this compiling on Windows right now.
     let font = read_font(DEFAULT_FONT);
     let scale_factor = pixels.height() as f32 / 10.0;
 
