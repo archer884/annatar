@@ -9,41 +9,17 @@ use std::path::{Path, PathBuf};
 // string but a path buffer itself is technically not because it isn't validated UTF8?
 
 pub struct Options {
-    base_image: PathBuf,
-    annotation: Annotation,
-    output_path: PathBuf,
-    scale_mult: f32,
-    font_path: PathBuf,
-    debug: bool,
+    pub base_image: PathBuf,
+    pub annotation: Annotation,
+    pub output_path: PathBuf,
+    pub scale_mult: f32,
+    pub font_path: PathBuf,
+    pub debug: bool,
 }
 
 impl Options {
     pub fn from_args() -> Result<Self, BuildOptionsError> {
         read_command()
-    }
-
-    pub fn base_image(&self) -> &Path {
-        &self.base_image
-    }
-
-    pub fn font_path(&self) -> &Path {
-        &self.font_path
-    }
-
-    pub fn scale_multiplier(&self) -> f32 {
-        self.scale_mult
-    }
-
-    pub fn annotation(&self) -> &Annotation {
-        &self.annotation
-    }
-
-    pub fn output_path(&self) -> &Path {
-        &self.output_path
-    }
-
-    pub fn debug(&self) -> bool {
-        self.debug
     }
 }
 
@@ -219,6 +195,6 @@ fn create_output_file_path(input_path: &Path) -> PathBuf {
     if let Some(last_segment_idx) = file_name.rfind('.') {
         file_name.truncate(last_segment_idx);
     }
-    file_name.push_str(".ann.png");
+    file_name.push_str(".ann.jpg");
     file_name.into()
 }

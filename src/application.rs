@@ -61,18 +61,18 @@ impl error::Error for AppRunError {
 
 impl App {
     pub fn run(&self, options: &Options) -> Result<(), AppRunError> {
-        let font = build_font(options.font_path())?;
-        let mut pixels = load_pixels(options.base_image())?;
-        let scale_factor = (pixels.height() as f32 / 10.0) * options.scale_multiplier();
+        let font = build_font(&options.font_path)?;
+        let mut pixels = load_pixels(&options.base_image)?;
+        let scale_factor = (pixels.height() as f32 / 10.0) * options.scale_mult;
 
-        if options.debug() {
-            let debug_image = options.annotation().render_and_debug(&mut pixels, &font, scale_factor)?;
+        if options.debug {
+            let debug_image = options.annotation.render_and_debug(&mut pixels, &font, scale_factor)?;
             save_pixels("edge.ann.png", &debug_image)?;    
         } else {
-            options.annotation().render(&mut pixels, &font, scale_factor)?;
+            options.annotation.render(&mut pixels, &font, scale_factor)?;
         }
 
-        Ok(save_pixels(options.output_path(), &pixels)?)
+        Ok(save_pixels(&options.output_path, &pixels)?)
     }
 }
 
@@ -109,6 +109,6 @@ fn save_pixels<P: AsRef<Path>>(path: P, pixels: &DynamicImage) -> Result<(), App
         .open(path.as_ref())
         .map_err(|e| AppRunError::io("Unable to write to output", Some(Box::new(e))))?;
 
-    pixels.save(&mut out, ImageFormat::PNG)
+    pixels.save(&mut out, ImageFormat::JPEG)
         .map_err(|e| AppRunError::io("Unable to save image to output", Some(Box::new(e))))
 }
