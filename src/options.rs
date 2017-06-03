@@ -154,7 +154,7 @@ fn read_command() -> Result<Options, BuildOptionsError> {
     // subcommands. This will probably mean a lot of repetition, but I guess I'm willing to pay 
     // that price at the moment--particularly as we only have one annotation type implemented.
     let matches = clap_app!(annatar => 
-        (version: "0.1.1")
+        (version: "0.1.2")
         (author: "J/A <archer884@gmail.com>")
         (about: "Memecrafter")
         (@subcommand caption =>
