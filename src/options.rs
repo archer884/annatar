@@ -1,5 +1,6 @@
 use annotation::*;
 use error::Cause;
+use image::ImageFormat;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -12,9 +13,25 @@ pub struct Options {
     pub base_image: PathBuf,
     pub annotations: AnnotationCollection,
     pub output_path: PathBuf,
+    pub output_format: OutputFormat,
     pub scale_mult: f32,
     pub font_path: PathBuf,
     pub debug: bool,
+}
+
+#[derive(Copy, Clone)]
+pub enum OutputFormat {
+    Jpg,
+    Png,
+}
+
+impl Into<ImageFormat> for OutputFormat {
+    fn into(self) -> ImageFormat {
+        match self {
+            OutputFormat::Jpg => ImageFormat::JPEG,
+            OutputFormat::Png => ImageFormat::PNG,
+        }
+    }
 }
 
 impl Options {
@@ -27,6 +44,7 @@ pub struct OptionsBuilder {
     base_image: Option<String>,
     annotations: Vec<Annotation>,
     output_path: Option<String>,
+    output_format: OutputFormat,
     scale_mult: f32,
     font_path: Cow<'static, str>,
     debug: bool,
@@ -38,6 +56,7 @@ impl OptionsBuilder {
             base_image: None,
             annotations: Vec::new(),
             output_path: None,
+            output_format: OutputFormat::Jpg,
             scale_mult: 1.0,
             font_path: default_font(),
             debug: false,
@@ -56,14 +75,16 @@ impl OptionsBuilder {
             });
         }
 
+        let output_format = self.output_format;
         let output_path = self.output_path
             .map(|s| s.into())
-            .unwrap_or_else(|| create_output_file_path(&input_path));
+            .unwrap_or_else(|| create_output_file_path(&input_path, output_format));
 
         Ok(Options {
             base_image: input_path,
             annotations: AnnotationCollection::new(self.annotations),
-            output_path: output_path,
+            output_path,
+            output_format,
             scale_mult: self.scale_mult,
             font_path: self.font_path.to_string().into(),
             debug: self.debug,
@@ -173,6 +194,15 @@ fn read_command() -> Result<Options, BuildOptionsError> {
         options.annotations.push(Annotation::Bottom(caption.into()));
     }
 
+    if matches.is_present("png") {
+        options.output_format = OutputFormat::Png;
+    } else if let Some(format) = matches.value_of("encoding") {
+        options.output_format = match &*format {
+            "png" | "PNG" => OutputFormat::Png,
+            _ => OutputFormat::Jpg,
+        };
+    }
+
     options.debug = matches.is_present("debug");
 
     options.build()
@@ -193,12 +223,17 @@ fn default_font() -> Cow<'static, str> {
     panic!("Honestly, getting a font on Linux is going to be an adventure.");
 }
 
-fn create_output_file_path(input_path: &Path) -> PathBuf {
+fn create_output_file_path(input_path: &Path, output_format: OutputFormat) -> PathBuf {
     // I unwrap this because clap already converted it to a string, implying it's valid utf-8.
     let mut file_name = input_path.file_name().unwrap().to_str().unwrap().to_string();
     if let Some(last_segment_idx) = file_name.rfind('.') {
         file_name.truncate(last_segment_idx);
     }
-    file_name.push_str(".ann.jpg");
+
+    match output_format {
+        OutputFormat::Png => file_name.push_str("-annotated.png"),
+        _ => file_name.push_str("-annotated.jpg"),
+    }
+
     file_name.into()
 }

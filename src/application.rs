@@ -72,7 +72,7 @@ impl App {
             let _ = options.annotations.render(&mut pixels, &font, scale_factor)?;
         }
 
-        Ok(save_pixels(&options.output_path, &pixels, ImageFormat::JPEG)?)
+        Ok(save_pixels(&options.output_path, &pixels, options.output_format.into())?)
     }
 }
 

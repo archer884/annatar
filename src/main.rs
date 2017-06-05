@@ -18,7 +18,12 @@ fn main() {
     match Options::from_args() {
         Ok(options) => {
             if let Err(e) = App.run(&options) {
-                println!("{}", e);
+                use std::error::Error;
+                if let Some(cause) = e.cause() {
+                    println!("{}: {}", e, cause);
+                } else {
+                    println!("{}", e);
+                }
                 process::exit(1);
             }
         }
