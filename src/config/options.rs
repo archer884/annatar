@@ -1,6 +1,7 @@
 use annotation::*;
 use error::Cause;
 use image::ImageFormat;
+use config::resource::Resource;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -10,7 +11,7 @@ use std::path::{Path, PathBuf};
 // string but a path buffer itself is technically not because it isn't validated UTF8?
 
 pub struct Options {
-    pub base_image: PathBuf,
+    pub base_image: Resource,
     pub annotations: AnnotationCollection,
     pub output_path: PathBuf,
     pub output_format: OutputFormat,
@@ -66,7 +67,7 @@ impl OptionsBuilder {
 
 impl OptionsBuilder {
     fn build(self) -> Result<Options, BuildOptionsError> {
-        let input_path: PathBuf = self.base_image.unwrap().into();
+        let input_path: PathBuf = self.base_image.as_ref().unwrap().into();
         if input_path.file_name().is_none() {
             return Err(BuildOptionsError {
                 kind: BuildOptionsErrorKind::ImagePath,
@@ -81,7 +82,7 @@ impl OptionsBuilder {
             .unwrap_or_else(|| create_output_file_path(&input_path, output_format));
 
         Ok(Options {
-            base_image: input_path,
+            base_image: Resource::new(self.base_image.unwrap()),
             annotations: AnnotationCollection::new(self.annotations),
             output_path,
             output_format,

@@ -7,4 +7,5 @@ authors = ["J/A <archer884@gmail.com>"]
 clap = "*"
 image = "*"
 imageproc = { git = "https://github.com/archer884/imageproc", branch = "annatar" }
+reqwest = "*"
 rusttype = "*"
