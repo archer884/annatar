@@ -97,10 +97,10 @@ fn render_text<'a>(text: &'a str,
     let x = x * 4;
     let y = y * 4;
 
-    let mut edge_rendering = ImageBuffer::from_pixel(text_width * 4, text_height * 4, black_pixel);
-    drawing::draw_text_with_font_mut(&mut edge_rendering, white_pixel, 0, 0, scale_4x, &font, &text);
+    let mut edge_rendering = ImageBuffer::from_pixel(text_width * 4, text_height * 4, Luma([0u8]));
+    drawing::draw_text_with_font_mut(&mut edge_rendering, Luma([255u8]), 0, 0, scale_4x, &font, &text);
 
-    let edge_rendering = edges::canny(&imageops::grayscale(&edge_rendering), 245.0, 245.0);
+    let edge_rendering = edges::canny(&edge_rendering, 245.0, 245.0);
     let edge_pixels = edge_rendering.pixels().enumerate()
         .filter(|&(_, &px)| Luma([255u8]) == px)
         .map(|(idx, _)| {
