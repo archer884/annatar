@@ -4,62 +4,84 @@ use imageproc::{drawing, edges};
 use imageproc::rect::Rect;
 use rusttype::{Font, Scale};
 
+pub struct AnnotationCollection(Vec<Annotation>);
+
+impl AnnotationCollection {
+    pub fn new(annotations: Vec<Annotation>) -> AnnotationCollection {
+        AnnotationCollection(annotations)
+    }
+
+    pub fn render<'a>(&'a self, pixels: &'a mut DynamicImage, font: &'a Font<'a>, scale_factor: f32) -> Result<DynamicImage, RenderError> {
+        fn top_position(width: u32, _height: u32, text_width: u32, text_height: u32) -> (u32, u32) {
+            let x = (width / 2) - (text_width / 2);
+            let y = {
+                let text_height = text_height as f32;
+                (text_height * 0.2) as u32
+            };
+
+            (x, y)
+        }
+
+        fn middle_position(width: u32, height: u32, text_width: u32, text_height: u32) -> (u32, u32) {
+            let x = (width / 2) - (text_width / 2);
+            let y = (height / 2) - (text_height / 2);
+
+            (x, y)
+        }
+
+        fn bottom_position(width: u32, height: u32, text_width: u32, text_height: u32) -> (u32, u32) {
+            let x = (width / 2) - (text_width / 2);
+            let y = {
+                let height = height as f32;
+                let text_height = text_height as f32;
+                (height - (text_height * 1.2)) as u32
+            };
+
+            (x, y)
+        }
+
+        let (width, height) = pixels.dimensions();
+        let mut text_rendering = DynamicImage::ImageRgba8(RgbaImage::new(width * 4, height * 4));
+
+        for annotation in self.0.iter() {
+            match *annotation {
+                Annotation::Top(ref text) => render_text(text, &mut text_rendering, font, scale_factor, width, height, top_position)?,
+                Annotation::Middle(ref text) => render_text(text, &mut text_rendering, font, scale_factor, width, height, middle_position)?,
+                Annotation::Bottom(ref text) => render_text(text, &mut text_rendering, font, scale_factor, width, height, bottom_position)?,
+            };
+        }
+
+        let downsampled_text = imageops::resize(&text_rendering, width, height, FilterType::CatmullRom);
+        imageops::overlay(pixels, &mut DynamicImage::ImageRgba8(downsampled_text), 0, 0);
+        Ok(text_rendering)
+    }
+}
+
 pub enum Annotation {
-    CaptionBottom(Text)
+    Top(String),
+    Middle(String),
+    Bottom(String),
 }
 
 // Apparently, rendering cannot produce any errors?
-pub struct AnnotationRenderError;
+pub struct RenderError;
 
-impl From<AnnotationRenderError> for AppRunError {
-    fn from(_: AnnotationRenderError) -> Self {
+impl From<RenderError> for AppRunError {
+    fn from(_: RenderError) -> Self {
         unimplemented!()
     }
 }
 
-pub struct Text {
-    content: String,
-
-    // At some point, this will be used for something. I think.
-    #[allow(unused)]
-    style: TextStyle,
-}
-
-pub enum TextStyle {
-    /// Default font with standard issue black outline.
-    Default,
-}
-
-impl<T: Into<String>> From<T> for Text {
-    fn from(content: T) -> Self {
-        Text {
-            content: content.into(),
-            style: TextStyle::Default,
-        }
-    }
-}
-
-impl Annotation {
-    pub fn render<'a>(&'a self, pixels: &'a mut DynamicImage, font: &'a Font<'a>, scale_factor: f32) -> Result<(), AnnotationRenderError> {
-        match *self {
-            Annotation::CaptionBottom(ref text) => {
-                let _ = render_caption_bottom(text, pixels, font, scale_factor);
-                Ok(())
-            }
-        }
-    }
-
-    pub fn render_and_debug<'a>(&'a self, pixels: &'a mut DynamicImage, font: &'a Font<'a>, scale_factor: f32) -> Result<DynamicImage, AnnotationRenderError> {
-        match *self {
-            Annotation::CaptionBottom(ref text) => {
-                let debug = render_caption_bottom(text, pixels, font, scale_factor);
-                debug.map(|image| DynamicImage::ImageRgba8(image))
-            }
-        }
-    }
-}
-
-fn render_caption_bottom<'a>(text: &'a Text, pixels: &'a mut DynamicImage, font: &'a Font<'a>, scale_factor: f32) -> Result<RgbaImage, AnnotationRenderError> {
+// c_width and c_height refer to the dimensions of the canvas onto which all of this will 
+// be drawn in the end--that is, the original image.
+fn render_text<'a>(text: &'a str,
+                   pixels: &'a mut DynamicImage,
+                   font: &'a Font<'a>,
+                   scale_factor: f32,
+                   c_width: u32,
+                   c_height: u32,
+                   position: fn(w: u32, h: u32, tw: u32, th: u32) -> (u32, u32))
+                   -> Result<(), RenderError> {
     // The final value in the array here is the *opacity* of the pixel. Not the transparency.
     // Apparently, this is not CSS...
     let white_pixel = Rgba([255, 255, 255, 255]);
@@ -67,25 +89,17 @@ fn render_caption_bottom<'a>(text: &'a Text, pixels: &'a mut DynamicImage, font:
     
     let scale = Scale::uniform(scale_factor);
     let scale_4x = Scale::uniform(scale_factor * 4.0);
-    let (width, height) = pixels.dimensions();
-    let (text_width, text_height) = text_size(&text.content, font, scale);
+    let (text_width, text_height) = text_size(&text, font, scale);
 
     // To reduce the janky jagginess of the black border around each letter, we want to render the 
     // words themselves at 4x resolution and then paste that on top of the existing image.
-    let x = ((width / 2) - (text_width / 2)) * 4;
-    let y = {
-        let height = height as f32;
-        let text_height = text_height as f32;
-        (height - (text_height * 1.2)) as u32
-    } * 4;
+    let (x, y) = position(c_width, c_height, text_width, text_height);
+    let x = x * 4;
+    let y = y * 4;
 
     let mut edge_rendering = ImageBuffer::from_pixel(text_width * 4, text_height * 4, black_pixel);
-    drawing::draw_text_with_font_mut(
-        &mut edge_rendering, white_pixel, 0, 0, scale_4x, &font, &text.content
-    );
+    drawing::draw_text_with_font_mut(&mut edge_rendering, white_pixel, 0, 0, scale_4x, &font, &text);
 
-    // This is going to end up huge. -.-
-    let mut text_layer_4x = RgbaImage::new(width * 4, height * 4);
     let edge_rendering = edges::canny(&imageops::grayscale(&edge_rendering), 245.0, 245.0);
     let edge_pixels = edge_rendering.pixels().enumerate()
         .filter(|&(_, &px)| Luma([255u8]) == px)
@@ -103,14 +117,11 @@ fn render_caption_bottom<'a>(text: &'a Text, pixels: &'a mut DynamicImage, font:
     let offset = (rect_size / 2) as i32;
     for (x, y) in edge_pixels {
         let rect = Rect::at(x as i32 - offset, y as i32 - offset).of_size(rect_size, rect_size);
-        drawing::draw_filled_rect_mut(&mut text_layer_4x, rect, black_pixel);
+        drawing::draw_filled_rect_mut(pixels, rect, black_pixel);
     }
 
-    drawing::draw_text_with_font_mut(&mut text_layer_4x, white_pixel, x, y, scale_4x, &font, &text.content);
-    
-    let downsampled_text = imageops::resize(&text_layer_4x, width, height, FilterType::CatmullRom);
-    imageops::overlay(pixels, &mut DynamicImage::ImageRgba8(downsampled_text), 0, 0);
-    Ok(text_layer_4x)
+    drawing::draw_text_with_font_mut(pixels, white_pixel, x, y, scale_4x, &font, &text);
+    Ok(())
 }
 
 /// Calculate the dimensions of the bounding box for a given string, font, and scale.

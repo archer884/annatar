@@ -1,4 +1,4 @@
-use annotation::Annotation;
+use annotation::*;
 use error::Cause;
 use std::borrow::Cow;
 use std::error;
@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 pub struct Options {
     pub base_image: PathBuf,
-    pub annotation: Annotation,
+    pub annotations: AnnotationCollection,
     pub output_path: PathBuf,
     pub scale_mult: f32,
     pub font_path: PathBuf,
@@ -24,9 +24,9 @@ impl Options {
 }
 
 pub struct OptionsBuilder {
-    base_image: Option<PathBuf>,
-    annotation: Option<Annotation>,
-    output_path: Option<PathBuf>,
+    base_image: Option<String>,
+    annotations: Vec<Annotation>,
+    output_path: Option<String>,
     scale_mult: f32,
     font_path: Cow<'static, str>,
     debug: bool,
@@ -36,7 +36,7 @@ impl OptionsBuilder {
     fn new() -> OptionsBuilder {
         OptionsBuilder {
             base_image: None,
-            annotation: None,
+            annotations: Vec::new(),
             output_path: None,
             scale_mult: 1.0,
             font_path: default_font(),
@@ -46,32 +46,8 @@ impl OptionsBuilder {
 }
 
 impl OptionsBuilder {
-    fn set_base_image(&mut self, s: String) {
-        self.base_image = Some(s.into());
-    }
-
-    fn set_annotation(&mut self, annotation: Annotation) {
-        self.annotation = Some(annotation);
-    }
-
-    fn set_output_path<T: Into<PathBuf>>(&mut self, s: T) {
-        self.output_path = Some(s.into());
-    }
-
-    fn set_scale_mult(&mut self, scale: f32) {
-        self.scale_mult = scale;
-    }
-
-    fn set_font_path(&mut self, s: String) {
-        self.font_path = Cow::from(s);
-    }
-
-    fn set_debug(&mut self, debug: bool) {
-        self.debug = debug;
-    }
-
     fn build(self) -> Result<Options, BuildOptionsError> {
-        let input_path = self.base_image.unwrap();
+        let input_path: PathBuf = self.base_image.unwrap().into();
         if input_path.file_name().is_none() {
             return Err(BuildOptionsError {
                 kind: BuildOptionsErrorKind::ImagePath,
@@ -80,12 +56,14 @@ impl OptionsBuilder {
             });
         }
 
-        let output_path = self.output_path.unwrap_or_else(|| create_output_file_path(&input_path));
+        let output_path = self.output_path
+            .map(|s| s.into())
+            .unwrap_or_else(|| create_output_file_path(&input_path));
 
         Ok(Options {
             base_image: input_path,
-            annotation: self.annotation.unwrap(),
-            output_path,
+            annotations: AnnotationCollection::new(self.annotations),
+            output_path: output_path,
             scale_mult: self.scale_mult,
             font_path: self.font_path.to_string().into(),
             debug: self.debug,
@@ -126,50 +104,76 @@ impl error::Error for BuildOptionsError {
 }
 
 fn read_command() -> Result<Options, BuildOptionsError> {
-    // For right now, at least, I have decided to make different annotation styles as their own
-    // subcommands. This will probably mean a lot of repetition, but I guess I'm willing to pay 
-    // that price at the moment--particularly as we only have one annotation type implemented.
-    let matches = clap_app!(annatar => 
-        (version: "0.1.2")
-        (author: "J/A <archer884@gmail.com>")
-        (about: "Memecrafter")
-        (@subcommand caption =>
-            (about: "Adds a caption to the bottom of the image")
-            (@arg IMAGE: +required "Sets the image to be annotated")
-            (@arg CAPTION: +required "Sets the caption to be added")
-            (@arg OUTPUT: -o --output +takes_value "Sets an output path for the new image (default: <image path>/<image name>.ann.png)")
-            (@arg SCALE: -s --scale +takes_value "Sets the scale multiplier for annotations")
-            (@arg FONT: -f --font +takes_value "Sets the path of the font to be used (default: Impact)")
-            (@arg DEBUG: -d --debug "Save edge detection ... thing to disk")
-        )
-    ).get_matches();
+    use clap::ArgGroup;
 
+    let text_group = ArgGroup::with_name("text_group")
+        .args(&["caption", "bottom", "top", "middle"])
+        .required(true)
+        .multiple(true);
+
+    let encoding_group = ArgGroup::with_name("enc_group")
+        .args(&["encoding", "jpg", "png"]);
+
+    let app = clap_app!(annatar => 
+        (version: crate_version!())
+        (author: crate_authors!())
+        (about: crate_description!())
+        (@arg image: +required "Path to an image to be annotated")
+        (@arg caption: "A message to be added to the bottom of the image")
+        (@arg bottom: -b --bottom +takes_value "A message to be added to the bottom of the image")
+        (@arg top: -t --top +takes_value "A message to be added to the top of the image")
+        (@arg middle: -m --middle +takes_value "A message to be added to the middle of the image")
+        (@arg output: -o --output +takes_value "Sets an output path for the new image (default: <image path>/<image name>.ann.<ext>)")
+        (@arg scale: -s --scale +takes_value "Sets the scale multiplier for annotations")
+        (@arg font: -f --font +takes_value "Sets the path of the font to be used (default: Impact)")
+        (@arg debug: -d --debug "Save edge detection ... thing to disk")
+        (@arg encoding: -e --encoding +takes_value "Set JPG or PNG")
+        (@arg jpg: --jpg "Set JPG mode (default)")
+        (@arg png: --png "Set PNG mode")
+    );
+
+    // Much easier to set up argument groups outside macro.
+    let app = app
+        .group(text_group)
+        .group(encoding_group);
+
+    let matches = app.get_matches();
     let mut options = OptionsBuilder::new();
 
-    if let Some(matches) = matches.subcommand_matches("caption") {
-        options.set_base_image(matches.value_of("IMAGE").unwrap().to_string());
-        options.set_annotation(Annotation::CaptionBottom(matches.value_of("CAPTION").unwrap().into()));
+    options.base_image = Some(matches.value_of("image").unwrap().to_string());
+    options.output_path = matches.value_of("output").map(|s| s.to_string());
 
-        if let Some(output_path) = matches.value_of("OUTPUT") {
-            options.set_output_path(output_path);
-        }
-
-        if let Some(scale_multiplier) = matches.value_of("SCALE") {
-            let multiplier = scale_multiplier.parse::<f32>()
-                .map_err(|e| BuildOptionsError {
-                    kind: BuildOptionsErrorKind::ScalingMultiplier,
-                    description: Cow::from("Scaling multiplier must be a decimal value"),
-                    cause: Some(Box::new(e)),
-                })?;
-            options.set_scale_mult(multiplier);
-        }
-
-        if let Some(font_path) = matches.value_of("FONT") {
-            options.set_font_path(font_path.to_string());
-        }
-
-        options.set_debug(matches.is_present("DEBUG"));
+    if let Some(scale_multiplier) = matches.value_of("scale") {
+        let multiplier = scale_multiplier.parse::<f32>()
+            .map_err(|e| BuildOptionsError {
+                kind: BuildOptionsErrorKind::ScalingMultiplier,
+                description: Cow::from("Scaling multiplier must be a decimal value"),
+                cause: Some(Box::new(e)),
+            })?;
+        options.scale_mult = multiplier;
     }
+
+    if let Some(font_path) = matches.value_of("font") {
+        options.font_path = Cow::from(font_path.to_string());
+    }
+
+    if let Some(caption) = matches.value_of("caption") {
+        options.annotations.push(Annotation::Bottom(caption.into()));
+    }
+
+    if let Some(caption) = matches.value_of("top") {
+        options.annotations.push(Annotation::Top(caption.into()));
+    }
+
+    if let Some(caption) = matches.value_of("middle") {
+        options.annotations.push(Annotation::Middle(caption.into()));
+    }
+
+    if let Some(caption) = matches.value_of("bottom") {
+        options.annotations.push(Annotation::Bottom(caption.into()));
+    }
+
+    options.debug = matches.is_present("debug");
 
     options.build()
 }
