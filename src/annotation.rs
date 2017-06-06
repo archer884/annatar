@@ -100,7 +100,7 @@ fn render_text<'a>(text: &'a str,
     let mut edge_rendering = ImageBuffer::from_pixel(text_width * 4, text_height * 4, Luma([0u8]));
     drawing::draw_text_with_font_mut(&mut edge_rendering, Luma([255u8]), 0, 0, scale_4x, &font, &text);
 
-    let edge_rendering = edges::canny(&edge_rendering, 245.0, 245.0);
+    let edge_rendering = edges::canny(&edge_rendering, 255.0, 255.0);
     let edge_pixels = edge_rendering.pixels().enumerate()
         .filter(|&(_, &px)| Luma([255u8]) == px)
         .map(|(idx, _)| {
@@ -117,7 +117,7 @@ fn render_text<'a>(text: &'a str,
     let offset = (rect_size / 2) as i32;
     for (x, y) in edge_pixels {
         let rect = Rect::at(x as i32 - offset, y as i32 - offset).of_size(rect_size, rect_size);
-        drawing::draw_filled_rect_mut(pixels, rect, black_pixel);
+        drawing::draw_hollow_rect_mut(pixels, rect, black_pixel);
     }
 
     drawing::draw_text_with_font_mut(pixels, white_pixel, x, y, scale_4x, &font, &text);
