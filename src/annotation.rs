@@ -1,4 +1,4 @@
-use application::AppRunError;
+use error::AppRunError;
 use image::{DynamicImage, FilterType, GenericImage, ImageBuffer, imageops, Luma, Rgba, RgbaImage};
 use imageproc::{drawing, edges};
 use imageproc::rect::Rect;

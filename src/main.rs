@@ -3,15 +3,16 @@ extern crate clap;
 
 extern crate image;
 extern crate imageproc;
+extern crate reqwest;
 extern crate rusttype;
 
 mod annotation;
 mod application;
+mod config;
 mod error;
-mod options;
 
 use application::App;
-use options::Options;
+use config::Options;
 use std::process;
 
 fn main() {

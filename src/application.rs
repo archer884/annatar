@@ -1,68 +1,21 @@
-use error::Cause;
+use config::Options;
+use error::AppRunError;
 use image::{self, DynamicImage, GenericImage, ImageFormat};
-use options::Options;
 use rusttype::{Font, FontCollection};
-use std::borrow::Cow;
-use std::error;
-use std::fmt;
 use std::path::Path;
 
 pub struct App;
 
-#[derive(Debug)]
-pub struct AppRunError {
-    kind: AppRunErrorKind,
-    description: Cow<'static, str>,
-    cause: Cause,
-}
-
-#[derive(Debug)]
-pub enum AppRunErrorKind {
-    IO,
-    NotFound,
-}
-
-impl AppRunError {
-    fn io<D: Into<Cow<'static, str>>>(desc: D, cause: Cause) -> AppRunError {
-        AppRunError {
-            kind: AppRunErrorKind::IO,
-            description: desc.into(),
-            cause,
-        }
-    }
-    
-    fn not_found<D: Into<Cow<'static, str>>>(desc: D, cause: Cause) -> AppRunError {
-        AppRunError {
-            kind: AppRunErrorKind::NotFound,
-            description: desc.into(),
-            cause,
-        }
-    }
-}
-
-impl fmt::Display for AppRunError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.description)
-    }
-}
-
-impl error::Error for AppRunError {
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self.cause {
-            Some(ref error) => Some(error.as_ref()),
-            None => None,
-        }
-    }
-}
-
 impl App {
     pub fn run(&self, options: &Options) -> Result<(), AppRunError> {
         let font = build_font(&options.font_path)?;
-        let mut pixels = load_pixels(&options.base_image)?;
+        let mut pixels = options.base_image.get()
+            .map_err(|e| AppRunError::not_found("Base image not found", Some(Box::new(e))))
+            .and_then(|buf| {
+                image::load_from_memory(&buf)
+                    .map_err(|e| AppRunError::bad_image(Some(Box::new(e))))
+            })?;
+
         let scale_factor = (pixels.height() as f32 / 10.0) * options.scale_mult;
 
         if options.debug {
@@ -91,11 +44,6 @@ fn build_font(path: &Path) -> Result<Font<'static>, AppRunError> {
     FontCollection::from_bytes(data)
         .font_at(0)
         .ok_or_else(|| AppRunError::not_found("Unable to locate valid font in file", None))
-}
-
-fn load_pixels(path: &Path) -> Result<DynamicImage, AppRunError> {
-    image::open(path)
-        .map_err(|e| AppRunError::not_found("Base image not found", Some(Box::new(e))))
 }
 
 fn save_debug(pixels: &DynamicImage) -> Result<(), AppRunError> {
