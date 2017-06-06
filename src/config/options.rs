@@ -81,9 +81,19 @@ impl OptionsBuilder {
             .map(|s| s.into())
             .unwrap_or_else(|| create_output_file_path(&input_path, output_format));
 
+        let annotations = if self.annotations.is_empty() {
+            return Err(BuildOptionsError {
+                kind: BuildOptionsErrorKind::Annotations,
+                description: Cow::from("No annotations provided"),
+                cause: None,
+            })
+        } else {
+            AnnotationCollection::new(self.annotations)
+        };
+
         Ok(Options {
             base_image: Resource::new(self.base_image.unwrap()),
-            annotations: AnnotationCollection::new(self.annotations),
+            annotations,
             output_path,
             output_format,
             scale_mult: self.scale_mult,
@@ -102,6 +112,7 @@ pub struct BuildOptionsError {
 
 #[derive(Debug)]
 enum BuildOptionsErrorKind {
+    Annotations,
     ImagePath,
     ScalingMultiplier,
 }
@@ -130,7 +141,6 @@ fn read_command() -> Result<Options, BuildOptionsError> {
 
     let text_group = ArgGroup::with_name("text_group")
         .args(&["caption", "bottom", "top", "middle"])
-        .required(true)
         .multiple(true);
 
     let encoding_group = ArgGroup::with_name("enc_group")
