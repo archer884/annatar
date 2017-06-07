@@ -1,6 +1,5 @@
-use annotation::*;
+use artano::Annotation;
 use error::Cause;
-use image::ImageFormat;
 use config::resource::Resource;
 use std::borrow::Cow;
 use std::error;
@@ -10,9 +9,10 @@ use std::path::{Path, PathBuf};
 // How the hell do you make a path buffer from command line input if command line input is a
 // string but a path buffer itself is technically not because it isn't validated UTF8?
 
+#[derive(Debug)]
 pub struct Options {
     pub base_image: Resource,
-    pub annotations: AnnotationCollection,
+    pub annotations: Vec<Annotation>,
     pub output_path: PathBuf,
     pub output_format: OutputFormat,
     pub scale_mult: f32,
@@ -20,19 +20,10 @@ pub struct Options {
     pub debug: bool,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum OutputFormat {
     Jpg,
     Png,
-}
-
-impl Into<ImageFormat> for OutputFormat {
-    fn into(self) -> ImageFormat {
-        match self {
-            OutputFormat::Jpg => ImageFormat::JPEG,
-            OutputFormat::Png => ImageFormat::PNG,
-        }
-    }
 }
 
 impl Options {
@@ -88,7 +79,7 @@ impl OptionsBuilder {
                 cause: None,
             })
         } else {
-            AnnotationCollection::new(self.annotations)
+            self.annotations
         };
 
         Ok(Options {
@@ -190,19 +181,19 @@ fn read_command() -> Result<Options, BuildOptionsError> {
     }
 
     if let Some(caption) = matches.value_of("caption") {
-        options.annotations.push(Annotation::Bottom(caption.into()));
+        options.annotations.push(Annotation::bottom(caption));
     }
 
     if let Some(caption) = matches.value_of("top") {
-        options.annotations.push(Annotation::Top(caption.into()));
+        options.annotations.push(Annotation::top(caption));
     }
 
     if let Some(caption) = matches.value_of("middle") {
-        options.annotations.push(Annotation::Middle(caption.into()));
+        options.annotations.push(Annotation::middle(caption));
     }
 
     if let Some(caption) = matches.value_of("bottom") {
-        options.annotations.push(Annotation::Bottom(caption.into()));
+        options.annotations.push(Annotation::bottom(caption));
     }
 
     if matches.is_present("png") {

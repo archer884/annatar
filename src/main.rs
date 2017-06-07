@@ -1,12 +1,9 @@
 #[macro_use]
 extern crate clap;
 
-extern crate image;
-extern crate imageproc;
+extern crate artano;
 extern crate reqwest;
-extern crate rusttype;
 
-mod annotation;
 mod application;
 mod config;
 mod error;

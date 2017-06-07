@@ -3,6 +3,7 @@ use std::error;
 use std::fmt;
 use std::io;
 
+#[derive(Debug)]
 pub struct Resource(String);
 
 #[derive(Debug)]
