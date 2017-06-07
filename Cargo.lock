@@ -2,7 +2,7 @@
 name = "annatar"
 version = "0.2.0"
 dependencies = [
- "artano 0.1.0",
+ "artano 0.1.0 (git+https://github.com/archer884/artano.git)",
  "clap 2.24.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -66,6 +66,7 @@ dependencies = [
 [[package]]
 name = "artano"
 version = "0.1.0"
+source = "git+https://github.com/archer884/artano.git#efbd82ab18c5f92d763ba292638028c70a4ef164"
 dependencies = [
  "image 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imageproc 0.8.0 (git+https://github.com/archer884/imageproc?branch=annatar)",
@@ -888,6 +889,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum antidote 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "34fde25430d87a9388dadbe6e34d7f72a462c8b43ac8d309b42b0a8505d7e2a5"
 "checksum approx 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "08abcc3b4e9339e33a3d0a5ed15d84a687350c05689d825e0f6655eef9e76a94"
 "checksum arrayvec 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)" = "699e63a93b79d717e8c3b5eb1b28b7780d0d6d9e59a72eb769291c83b0c8dc67"
+"checksum artano 0.1.0 (git+https://github.com/archer884/artano.git)" = "<none>"
 "checksum atty 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d912da0db7fa85514874458ca3651fe2cddace8d0b0505571dbdcd41ab490159"
 "checksum base64 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "30e93c03064e7590d0466209155251b90c22e37fab1daf2771582598b5827557"
 "checksum bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "aad18937a628ec6abcd26d1489012cc0e18c21798210f491af69ded9b881106d"
