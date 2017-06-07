@@ -1,6 +1,6 @@
 [package]
 name = "annatar"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["J/A <archer884@gmail.com>"]
 
 [dependencies]
