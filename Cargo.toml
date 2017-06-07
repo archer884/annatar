@@ -4,8 +4,6 @@ version = "0.2.0"
 authors = ["J/A <archer884@gmail.com>"]
 
 [dependencies]
+artano = { path = "../artano" }
 clap = "*"
-image = "*"
-imageproc = { git = "https://github.com/archer884/imageproc", branch = "annatar" }
 reqwest = "*"
-rusttype = "*"
