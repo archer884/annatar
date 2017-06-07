@@ -66,7 +66,7 @@ dependencies = [
 [[package]]
 name = "artano"
 version = "0.1.0"
-source = "git+https://github.com/archer884/artano.git#2e73d70eb9895f467e543e332564597989e64f4c"
+source = "git+https://github.com/archer884/artano.git#44a934758beff65dc11e360b179e356b9f6cdad5"
 dependencies = [
  "image 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imageproc 0.8.0 (git+https://github.com/archer884/imageproc)",
@@ -309,7 +309,7 @@ dependencies = [
 [[package]]
 name = "imageproc"
 version = "0.8.0"
-source = "git+https://github.com/archer884/imageproc#c3852513d5285f040a8f81e4af5e29865118226a"
+source = "git+https://github.com/archer884/imageproc#4bf07f498e5b0a51a962e6cef876d3daa8dd5cb7"
 dependencies = [
  "conv 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
