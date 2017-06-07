@@ -66,7 +66,7 @@ dependencies = [
 [[package]]
 name = "artano"
 version = "0.1.0"
-source = "git+https://github.com/archer884/artano.git#aae9ad954966e3237bbcbf9401cc580b4df59775"
+source = "git+https://github.com/archer884/artano.git#2e73d70eb9895f467e543e332564597989e64f4c"
 dependencies = [
  "image 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imageproc 0.8.0 (git+https://github.com/archer884/imageproc)",
