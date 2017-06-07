@@ -5,5 +5,5 @@ authors = ["J/A <archer884@gmail.com>"]
 
 [dependencies]
 artano = { git = "https://github.com/archer884/artano.git" }
-clap = "*"
-reqwest = "*"
+clap = "2.24"
+reqwest = "0.6"
