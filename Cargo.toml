@@ -2,6 +2,15 @@
 name = "annatar"
 version = "0.2.1"
 authors = ["J/A <archer884@gmail.com>"]
+license = "MIT/Apache-2.0"
+keywords = ["image", "image-manipulation", "meme", "pepe", "kek"]
+readme = "README.md"
+repository = "https://github.com/archer884/annatar"
+homepage = "https://github.com/archer884/annatar"
+categories = ["multimedia::images"]
+description = """
+A command line tool for making memes.
+"""
 
 [dependencies]
 artano = "0.1"
