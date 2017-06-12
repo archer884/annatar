@@ -2,7 +2,7 @@
 
 > A command line tool for adding text to pictures
 
-This crate is named for the Dark Lord Sauron. The name is taken from Quenya, meaning 'Lord of Gifts,' which has a hilarious mispronunciation that seems to apply almost directly to this case. Like the library it's based on, this is clearly for making evil things.
+This crate is named for the Dark Lord Sauron. The name is taken from the Quenya for 'Lord of Gifts,' which has a hilarious mispronunciation that seems to apply almost directly to this case. Like the library it's based on, this is clearly for making evil things.
 
 ## License
 
