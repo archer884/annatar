@@ -10,8 +10,8 @@ impl App {
         let font = build_font(&options.font_path)?;
         let mut canvas = options.base_image.get()
             .map_err(|e| AppRunError::not_found("Base image not found", Some(Box::new(e))))
-            .and_then(|mut buf| {
-                Canvas::read_from_buffer(&mut buf)
+            .and_then(|buf| {
+                Canvas::read_from_buffer(&buf)
                     .map_err(|e| AppRunError::bad_image(Some(Box::new(e))))
             })?;
 
@@ -28,11 +28,10 @@ fn build_font(path: &Path) -> Result<Typeface, AppRunError> {
     use std::fs::File;
     use std::io::BufReader;
 
-    let mut data = File::open(path)
-        .map(|file| BufReader::new(file))
+    let data = File::open(path)
         .map_err(|e| AppRunError::not_found("Font not found", Some(Box::new(e))))?;
 
-    artano::load_typeface(&mut data)
+    artano::load_typeface(&mut BufReader::new(data))
         .map_err(|e| AppRunError::io("Unable to read font", Some(Box::new(e))))
 }
 
