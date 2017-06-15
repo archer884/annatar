@@ -62,22 +62,24 @@ impl OptionsBuilder {
         if input_path.file_name().is_none() {
             return Err(BuildOptionsError {
                 kind: BuildOptionsErrorKind::ImagePath,
-                description: Cow::from("The provided image path does not appear to have a filename"),
-                cause: None,
+                description: Cow::from(
+                    "The provided image path does not appear to have a filename",
+                ),
+                cause: Cause::none(),
             });
         }
 
         let output_format = self.output_format;
-        let output_path = self.output_path
-            .map(|s| s.into())
-            .unwrap_or_else(|| create_output_file_path(&input_path, output_format));
+        let output_path = self.output_path.map(|s| s.into()).unwrap_or_else(|| {
+            create_output_file_path(&input_path, output_format)
+        });
 
         let annotations = if self.annotations.is_empty() {
             return Err(BuildOptionsError {
                 kind: BuildOptionsErrorKind::Annotations,
                 description: Cow::from("No annotations provided"),
-                cause: None,
-            })
+                cause: Cause::none(),
+            });
         } else {
             self.annotations
         };
@@ -120,7 +122,7 @@ impl error::Error for BuildOptionsError {
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        match self.cause {
+        match self.cause.0 {
             Some(ref error) => Some(error.as_ref()),
             None => None,
         }
@@ -134,10 +136,9 @@ fn read_command() -> Result<Options, BuildOptionsError> {
         .args(&["caption", "bottom", "top", "middle"])
         .multiple(true);
 
-    let encoding_group = ArgGroup::with_name("enc_group")
-        .args(&["encoding", "jpg", "png"]);
+    let encoding_group = ArgGroup::with_name("enc_group").args(&["encoding", "jpg", "png"]);
 
-    let app = clap_app!(annatar => 
+    let app = clap_app!(annatar =>
         (version: crate_version!())
         (author: crate_authors!())
         (about: crate_description!())
@@ -146,7 +147,8 @@ fn read_command() -> Result<Options, BuildOptionsError> {
         (@arg bottom: -b --bottom +takes_value "A message to be added to the bottom of the image")
         (@arg top: -t --top +takes_value "A message to be added to the top of the image")
         (@arg middle: -m --middle +takes_value "A message to be added to the middle of the image")
-        (@arg output: -o --output +takes_value "Sets an output path for the new image (default: <image path>/<image name>.ann.<ext>)")
+        (@arg output: -o --output +takes_value
+            "Sets an output path for the new image (default: <image path>/<image name>.ann.<ext>)")
         (@arg scale: -s --scale +takes_value "Sets the scale multiplier for annotations")
         (@arg font: -f --font +takes_value "Sets the path of the font to be used (default: Impact)")
         (@arg debug: -d --debug "Save edge detection ... thing to disk")
@@ -156,9 +158,7 @@ fn read_command() -> Result<Options, BuildOptionsError> {
     );
 
     // Much easier to set up argument groups outside macro.
-    let app = app
-        .group(text_group)
-        .group(encoding_group);
+    let app = app.group(text_group).group(encoding_group);
 
     let matches = app.get_matches();
     let mut options = OptionsBuilder::new();
@@ -167,12 +167,13 @@ fn read_command() -> Result<Options, BuildOptionsError> {
     options.output_path = matches.value_of("output").map(|s| s.to_string());
 
     if let Some(scale_multiplier) = matches.value_of("scale") {
-        let multiplier = scale_multiplier.parse::<f32>()
-            .map_err(|e| BuildOptionsError {
+        let multiplier = scale_multiplier.parse::<f32>().map_err(|e| {
+            BuildOptionsError {
                 kind: BuildOptionsErrorKind::ScalingMultiplier,
                 description: Cow::from("Scaling multiplier must be a decimal value"),
-                cause: Some(Box::new(e)),
-            })?;
+                cause: e.into(),
+            }
+        })?;
         options.scale_mult = multiplier;
     }
 
@@ -227,7 +228,12 @@ fn default_font() -> Cow<'static, str> {
 
 fn create_output_file_path(input_path: &Path, output_format: OutputFormat) -> PathBuf {
     // I unwrap this because clap already converted it to a string, implying it's valid utf-8.
-    let mut file_name = input_path.file_name().unwrap().to_str().unwrap().to_string();
+    let mut file_name = input_path
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
     if let Some(last_segment_idx) = file_name.rfind('.') {
         file_name.truncate(last_segment_idx);
     }

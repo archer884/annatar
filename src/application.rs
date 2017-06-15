@@ -8,11 +8,16 @@ pub struct App;
 impl App {
     pub fn run(&self, options: &Options) -> Result<(), AppRunError> {
         let font = build_font(&options.font_path)?;
-        let mut canvas = options.base_image.get()
-            .map_err(|e| AppRunError::not_found("Base image not found", Some(Box::new(e))))
+        let mut canvas = options
+            .base_image
+            .get()
+            .map_err(|e| {
+                AppRunError::not_found("Base image not found", e)
+            })
             .and_then(|buf| {
-                Canvas::read_from_buffer(&buf)
-                    .map_err(|e| AppRunError::bad_image(Some(Box::new(e))))
+                Canvas::read_from_buffer(&buf).map_err(|e| {
+                    AppRunError::bad_image(e)
+                })
             })?;
 
         for annotation in &options.annotations {
@@ -28,15 +33,21 @@ fn build_font(path: &Path) -> Result<Typeface, AppRunError> {
     use std::fs::File;
     use std::io::BufReader;
 
-    let data = File::open(path)
-        .map_err(|e| AppRunError::not_found("Font not found", Some(Box::new(e))))?;
+    let data = File::open(path).map_err(|e| {
+        AppRunError::not_found("Font not found", e)
+    })?;
 
-    artano::load_typeface(&mut BufReader::new(data))
-        .map_err(|e| AppRunError::io("Unable to read font", Some(Box::new(e))))
+    artano::load_typeface(&mut BufReader::new(data)).map_err(|e| {
+        AppRunError::io("Unable to read font", e)
+    })
 }
 
 
-fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: OutputFormat) -> Result<(), AppRunError> {
+fn save_pixels<P: AsRef<Path>>(
+    path: P,
+    canvas: &Canvas,
+    format: OutputFormat,
+) -> Result<(), AppRunError> {
     use std::fs::OpenOptions;
 
     let mut out = OpenOptions::new()
@@ -44,12 +55,16 @@ fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: OutputFormat) -
         .create(true)
         .truncate(true)
         .open(path.as_ref())
-        .map_err(|e| AppRunError::io("Unable to write to output", Some(Box::new(e))))?;
+        .map_err(|e| {
+            AppRunError::io("Unable to write to output", e)
+        })?;
 
     let result = match format {
         OutputFormat::Png => canvas.save_png(&mut out),
         OutputFormat::Jpg => canvas.save_jpg(&mut out),
     };
 
-    result.map_err(|e| AppRunError::io("Unable to save image to output", Some(Box::new(e))))
+    result.map_err(|e| {
+        AppRunError::io("Unable to save image to output", e)
+    })
 }
