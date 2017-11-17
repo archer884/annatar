@@ -153,7 +153,6 @@ fn read_command() -> Result<Options> {
         (@arg scale: -s --scale +takes_value "Sets the scale multiplier for annotations")
         (@arg font: -f --font +takes_value "Sets the path of the font to be used (default: Impact)")
         (@arg debug: -d --debug "Save edge detection ... thing to disk")
-        (@arg encoding: -e --encoding +takes_value "Set JPG or PNG")
         (@arg jpg: --jpg "Set JPG mode (default)")
         (@arg png: --png "Set PNG mode")
     );
@@ -198,14 +197,13 @@ fn read_command() -> Result<Options> {
         options.annotations.push(Annotation::bottom(caption));
     }
 
-    if matches.is_present("png") {
-        options.output_format = OutputFormat::Png;
-    } else if let Some(format) = matches.value_of("encoding") {
-        options.output_format = match &*format {
-            "png" | "PNG" => OutputFormat::Png,
-            _ => OutputFormat::Jpg,
-        };
-    }
+    options.output_format = {
+        if matches.is_present("jpg") {
+            OutputFormat::Jpg
+        } else {
+            OutputFormat::Png
+        }
+    };
 
     options.debug = matches.is_present("debug");
 
@@ -235,6 +233,7 @@ fn create_output_file_path(input_path: &Path, output_format: OutputFormat) -> Pa
         .to_str()
         .unwrap()
         .to_string();
+
     if let Some(last_segment_idx) = file_name.rfind('.') {
         file_name.truncate(last_segment_idx);
     }
