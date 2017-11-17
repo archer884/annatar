@@ -138,7 +138,8 @@ fn read_command() -> Result<Options> {
 
     let encoding_group = ArgGroup::with_name("enc_group").args(&["encoding", "jpg", "png"]);
 
-    let app = clap_app!(annatar =>
+    let app =
+        clap_app!(annatar =>
         (version: crate_version!())
         (author: crate_authors!())
         (about: crate_description!())

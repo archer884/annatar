@@ -11,7 +11,7 @@ pub trait IntoCause: error::Error + Sized + 'static {
     }
 }
 
-impl<T: error::Error + Sized + 'static> IntoCause for T { }
+impl<T: error::Error + Sized + 'static> IntoCause for T {}
 
 #[derive(Debug)]
 pub struct Error {
