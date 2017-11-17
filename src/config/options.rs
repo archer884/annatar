@@ -1,13 +1,16 @@
 use artano::Annotation;
-use error::Cause;
 use config::resource::Resource;
+use error::Cause;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::result;
 
 // How the hell do you make a path buffer from command line input if command line input is a
 // string but a path buffer itself is technically not because it isn't validated UTF8?
+
+type Result<T> = result::Result<T, BuildOptionsError>;
 
 #[derive(Debug)]
 pub struct Options {
@@ -27,7 +30,7 @@ pub enum OutputFormat {
 }
 
 impl Options {
-    pub fn from_args() -> Result<Self, BuildOptionsError> {
+    pub fn from_args() -> Result<Self> {
         read_command()
     }
 }
@@ -57,7 +60,7 @@ impl OptionsBuilder {
 }
 
 impl OptionsBuilder {
-    fn build(self) -> Result<Options, BuildOptionsError> {
+    fn build(self) -> Result<Options> {
         let input_path: PathBuf = self.base_image.as_ref().unwrap().into();
         if input_path.file_name().is_none() {
             return Err(BuildOptionsError {
@@ -65,7 +68,7 @@ impl OptionsBuilder {
                 description: Cow::from(
                     "The provided image path does not appear to have a filename",
                 ),
-                cause: Cause::none(),
+                cause: None,
             });
         }
 
@@ -78,7 +81,7 @@ impl OptionsBuilder {
             return Err(BuildOptionsError {
                 kind: BuildOptionsErrorKind::Annotations,
                 description: Cow::from("No annotations provided"),
-                cause: Cause::none(),
+                cause: None,
             });
         } else {
             self.annotations
@@ -100,7 +103,7 @@ impl OptionsBuilder {
 pub struct BuildOptionsError {
     kind: BuildOptionsErrorKind,
     description: Cow<'static, str>,
-    cause: Cause,
+    cause: Option<Cause>,
 }
 
 #[derive(Debug)]
@@ -122,14 +125,11 @@ impl error::Error for BuildOptionsError {
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        match self.cause.0 {
-            Some(ref error) => Some(error.as_ref()),
-            None => None,
-        }
+        self.cause.as_ref().map(|cause| cause.as_ref())
     }
 }
 
-fn read_command() -> Result<Options, BuildOptionsError> {
+fn read_command() -> Result<Options> {
     use clap::ArgGroup;
 
     let text_group = ArgGroup::with_name("text_group")
@@ -171,7 +171,7 @@ fn read_command() -> Result<Options, BuildOptionsError> {
             BuildOptionsError {
                 kind: BuildOptionsErrorKind::ScalingMultiplier,
                 description: Cow::from("Scaling multiplier must be a decimal value"),
-                cause: e.into(),
+                cause: Some(Box::new(e)),
             }
         })?;
         options.scale_mult = multiplier;
@@ -223,7 +223,7 @@ fn default_font() -> Cow<'static, str> {
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 fn default_font() -> Cow<'static, str> {
-    panic!("Honestly, getting a font on Linux is going to be an adventure.");
+    unimplemented!("Honestly, getting a font on Linux is going to be an adventure.");
 }
 
 fn create_output_file_path(input_path: &Path, output_format: OutputFormat) -> PathBuf {

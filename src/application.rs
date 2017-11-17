@@ -1,22 +1,25 @@
 use artano::{self, Canvas, Typeface};
 use config::{Options, OutputFormat};
-use error::AppRunError;
+use error::Error;
 use std::path::Path;
+use std::result;
+
+type Result<T> = result::Result<T, Error>;
 
 pub struct App;
 
 impl App {
-    pub fn run(&self, options: &Options) -> Result<(), AppRunError> {
+    pub fn run(&self, options: &Options) -> Result<()> {
         let font = build_font(&options.font_path)?;
         let mut canvas = options
             .base_image
             .get()
             .map_err(|e| {
-                AppRunError::not_found("Base image not found", e)
+                Error::not_found("Base image not found", e)
             })
             .and_then(|buf| {
                 Canvas::read_from_buffer(&buf).map_err(|e| {
-                    AppRunError::bad_image(e)
+                    Error::bad_image(e)
                 })
             })?;
 
@@ -29,25 +32,24 @@ impl App {
     }
 }
 
-fn build_font(path: &Path) -> Result<Typeface, AppRunError> {
+fn build_font(path: &Path) -> Result<Typeface> {
     use std::fs::File;
     use std::io::BufReader;
 
     let data = File::open(path).map_err(|e| {
-        AppRunError::not_found("Font not found", e)
+        Error::not_found("Font not found", e)
     })?;
 
     artano::load_typeface(&mut BufReader::new(data)).map_err(|e| {
-        AppRunError::io("Unable to read font", e)
+        Error::io("Unable to read font", e)
     })
 }
-
 
 fn save_pixels<P: AsRef<Path>>(
     path: P,
     canvas: &Canvas,
     format: OutputFormat,
-) -> Result<(), AppRunError> {
+) -> Result<()> {
     use std::fs::OpenOptions;
 
     let mut out = OpenOptions::new()
@@ -56,7 +58,7 @@ fn save_pixels<P: AsRef<Path>>(
         .truncate(true)
         .open(path.as_ref())
         .map_err(|e| {
-            AppRunError::io("Unable to write to output", e)
+            Error::io("Unable to write to output", e)
         })?;
 
     let result = match format {
@@ -65,6 +67,6 @@ fn save_pixels<P: AsRef<Path>>(
     };
 
     result.map_err(|e| {
-        AppRunError::io("Unable to save image to output", e)
+        Error::io("Unable to save image to output", e)
     })
 }

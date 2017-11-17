@@ -3,102 +3,86 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
-pub struct Cause(pub Option<Box<error::Error>>);
+pub type Cause = Box<error::Error>;
 
-impl Cause {
-    pub fn none() -> Cause {
-        Cause(None)
+pub trait IntoCause: error::Error + Sized + 'static {
+    fn into(self) -> Cause {
+        Box::new(self)
     }
 }
 
-impl<T: error::Error + 'static> From<T> for Cause {
-    fn from(error: T) -> Cause {
-        Cause(Some(Box::new(error)))
-    }
-}
-
-impl fmt::Debug for Cause {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0 {
-            None => write!(f, "None"),
-            Some(ref cause) => write!(f, "{}", cause),
-        }
-    }
-}
+impl<T: error::Error + Sized + 'static> IntoCause for T { }
 
 #[derive(Debug)]
-pub struct AppRunError {
-    kind: AppRunErrorKind,
+pub struct Error {
+    kind: ErrorKind,
     description: Cow<'static, str>,
-    cause: Cause,
+    cause: Option<Cause>,
 }
 
 #[derive(Debug)]
-pub enum AppRunErrorKind {
+pub enum ErrorKind {
     BadImage,
     IO,
     NotFound,
 }
 
-impl AppRunError {
-    pub fn io<D, E>(desc: D, cause: E) -> AppRunError 
+impl Error {
+    pub fn io<D, E>(desc: D, error: E) -> Self
     where
         D: Into<Cow<'static, str>>,
-        E: Into<Cause>,
+        E: IntoCause,
     {
-        AppRunError {
-            kind: AppRunErrorKind::IO,
+        Self {
+            kind: ErrorKind::IO,
             description: desc.into(),
-            cause: cause.into(),
+            cause: Some(error.into()),
         }
     }
 
-    pub fn not_found<D, E>(desc: D, cause: E) -> AppRunError 
+    pub fn not_found<D, E>(desc: D, error: E) -> Self
     where
         D: Into<Cow<'static, str>>,
-        E: Into<Cause>,
+        E: IntoCause,
     {
-        AppRunError {
-            kind: AppRunErrorKind::NotFound,
+        Self {
+            kind: ErrorKind::NotFound,
             description: desc.into(),
-            cause: cause.into(),
+            cause: Some(error.into()),
         }
     }
 
-    pub fn bad_image<E: Into<Cause>>(cause: E) -> AppRunError {
-        AppRunError {
-            kind: AppRunErrorKind::BadImage,
+    pub fn bad_image<E: IntoCause>(error: E) -> Self {
+        Self {
+            kind: ErrorKind::BadImage,
             description: Cow::from("We were unable to interpret this image"),
-            cause: cause.into(),
+            cause: Some(error.into()),
         }
     }
 }
 
-impl fmt::Display for AppRunError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(&self.description)
     }
 }
 
-impl error::Error for AppRunError {
+impl error::Error for Error {
     fn description(&self) -> &str {
         &self.description
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        match self.cause.0 {
-            Some(ref error) => Some(error.as_ref()),
-            None => None,
-        }
+        self.cause.as_ref().map(|cause| cause.as_ref())
     }
 }
 
-impl From<ResourceError> for AppRunError {
+impl From<ResourceError> for Error {
     fn from(error: ResourceError) -> Self {
-        AppRunError {
-            kind: AppRunErrorKind::NotFound,
+        Self {
+            kind: ErrorKind::NotFound,
             description: Cow::from("Unable to retrieve the requested resource"),
-            cause: error.into(),
+            cause: Some(Box::new(error)),
         }
     }
 }

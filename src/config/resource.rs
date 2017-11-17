@@ -2,6 +2,9 @@ use reqwest;
 use std::error;
 use std::fmt;
 use std::io;
+use std::result;
+
+type Result<T> = result::Result<T, ResourceError>;
 
 #[derive(Debug)]
 pub struct Resource(String);
@@ -42,7 +45,7 @@ impl Resource {
         Resource(path.into())
     }
 
-    pub fn get(&self) -> Result<Vec<u8>, ResourceError> {
+    pub fn get(&self) -> Result<Vec<u8>> {
         if self.is_http() {
             load_web_resource(&self.0)
         } else {
@@ -55,7 +58,7 @@ impl Resource {
     }
 }
 
-fn load_web_resource(s: &str) -> Result<Vec<u8>, ResourceError> {
+fn load_web_resource(s: &str) -> Result<Vec<u8>> {
     use std::io::Read;
     let mut response = reqwest::get(s)?;
     let mut buf = Vec::new();
@@ -63,7 +66,7 @@ fn load_web_resource(s: &str) -> Result<Vec<u8>, ResourceError> {
     Ok(buf)
 }
 
-fn load_local_resource(s: &str) -> Result<Vec<u8>, ResourceError> {
+fn load_local_resource(s: &str) -> Result<Vec<u8>> {
     use std::fs::File;
     use std::io::{BufReader, Read};
     let mut file = BufReader::new(File::open(s)?);
