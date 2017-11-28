@@ -73,9 +73,9 @@ impl OptionsBuilder {
         }
 
         let output_format = self.output_format;
-        let output_path = self.output_path
-            .map(|s| s.into())
-            .unwrap_or_else(|| create_output_file_path(&input_path, output_format));
+        let output_path = self.output_path.map(|s| s.into()).unwrap_or_else(|| {
+            create_output_file_path(&input_path, output_format)
+        });
 
         let annotations = if self.annotations.is_empty() {
             return Err(BuildOptionsError {
@@ -136,9 +136,10 @@ fn read_command() -> Result<Options> {
         .args(&["caption", "bottom", "top", "middle"])
         .multiple(true);
 
-    let encoding_group = ArgGroup::with_name("enc_group").args(&["encoding", "jpg", "png"]);
+    let encoding_group = ArgGroup::with_name("enc_group").args(&["jpg", "png"]);
 
-    let app = clap_app!(annatar =>
+    let app =
+        clap_app!(annatar =>
         (version: crate_version!())
         (author: crate_authors!())
         (about: crate_description!())

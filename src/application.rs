@@ -16,7 +16,7 @@ impl App {
             .get()
             .map_err(|e| Error::not_found("Base image not found", e))
             .and_then(|buf| {
-                Canvas::read_from_buffer(&buf).map_err(|e| Error::bad_image(e))
+                Canvas::read_from_buffer(&buf).map_err(Error::bad_image)
             })?;
 
         for annotation in &options.annotations {
@@ -32,10 +32,15 @@ fn build_font(path: &Path) -> Result<Typeface> {
     use std::fs::File;
     use std::io::BufReader;
 
-    let data = File::open(path).map_err(|e| Error::not_found("Font not found", e))?;
+    let data = File::open(path).map_err(
+        |e| Error::not_found("Font not found", e),
+    )?;
 
-    artano::load_typeface(&mut BufReader::new(data))
-        .map_err(|e| Error::io("Unable to read font", e))
+    artano::load_typeface(&mut BufReader::new(data)).map_err(
+        |e| {
+            Error::io("Unable to read font", e)
+        },
+    )
 }
 
 fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: OutputFormat) -> Result<()> {
