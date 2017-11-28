@@ -16,7 +16,7 @@ impl App {
             .get()
             .map_err(|e| Error::not_found("Base image not found", e))
             .and_then(|buf| {
-                Canvas::read_from_buffer(&buf).map_err(|e| Error::bad_image(e))
+                Canvas::read_from_buffer(&buf).map_err(Error::bad_image)
             })?;
 
         for annotation in &options.annotations {
