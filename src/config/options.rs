@@ -136,7 +136,7 @@ fn read_command() -> Result<Options> {
         .args(&["caption", "bottom", "top", "middle"])
         .multiple(true);
 
-    let encoding_group = ArgGroup::with_name("enc_group").args(&["encoding", "jpg", "png"]);
+    let encoding_group = ArgGroup::with_name("enc_group").args(&["jpg", "png"]);
 
     let app = clap_app!(annatar =>
         (version: crate_version!())
