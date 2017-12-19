@@ -1,6 +1,6 @@
 [package]
 name = "annatar"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["J/A <archer884@gmail.com>"]
 license = "MIT/Apache-2.0"
 keywords = ["image", "image-manipulation", "meme", "pepe", "kek"]
@@ -13,6 +13,6 @@ A command line tool for making memes.
 """
 
 [dependencies]
-artano = "0.2.2"
+artano = "0.2.3"
 clap = "2.28"
 reqwest = "0.8"
