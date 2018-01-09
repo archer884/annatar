@@ -153,8 +153,8 @@ fn read_command() -> Result<Options> {
         (@arg scale: -s --scale +takes_value "Sets the scale multiplier for annotations")
         (@arg font: -f --font +takes_value "Sets the path of the font to be used (default: Impact)")
         (@arg debug: -d --debug "Save edge detection ... thing to disk")
-        (@arg jpg: --jpg "Set JPG mode (default)")
-        (@arg png: --png "Set PNG mode")
+        (@arg jpg: --jpg "Set JPG mode")
+        (@arg png: --png "Set PNG mode (default)")
     );
 
     // Much easier to set up argument groups outside macro.
