@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>annatar</id>
+    <version>0.3.2</version>
+    <packageSourceUrl>https://github.com/archer884/annatar</packageSourceUrl>
+    <owners>John M. Archer</owners>
+    <title>annatar</title>
+    <authors>John M. Archer</authors>
+    <projectUrl>https://github.com/archer884/annatar</projectUrl>
+    <copyright>2017-2018</copyright>
+    <licenseUrl>https://raw.githubusercontent.com/archer884/annatar/master/LICENSE-MIT</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/archer884/annatar</projectSourceUrl>
+    <tags>annatar meme kek caption</tags>
+    <summary>__REPLACE__</summary>
+    <description>A command line utility for generating memes.</description>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
