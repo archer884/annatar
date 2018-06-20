@@ -32,15 +32,12 @@ fn build_font(path: &Path) -> Result<Typeface> {
     use std::fs::File;
     use std::io::BufReader;
 
-    let data = File::open(path).map_err(
-        |e| Error::not_found("Font not found", e),
-    )?;
-
-    artano::load_typeface(&mut BufReader::new(data)).map_err(
-        |e| {
-            Error::io("Unable to read font", e)
-        },
-    )
+    let data = File::open(path)
+        .map(BufReader::new)
+        .map_err(|e| Error::not_found("Font not found", e))?;
+    
+    artano::load_typeface(data)
+        .map_err(|e| Error::io("Unable to read font", e))
 }
 
 fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: OutputFormat) -> Result<()> {
