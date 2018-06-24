@@ -4,4 +4,4 @@ Nothing is more precious to me than my First Amendment rights, and I hope the sa
 
 ## Come on, dude...
 
-You didn't really think a project devote to creating memes and to the Republic of Kekistan would waste time on a Code of Conduct, did you?
+You didn't really think a project devoted to creating memes would waste time on a Code of Conduct, did you?
