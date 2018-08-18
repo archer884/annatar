@@ -4,6 +4,14 @@
 
 This crate is named for the Dark Lord Sauron. The name is taken from the Quenya for 'Lord of Gifts,' which has a hilarious mispronunciation that seems to apply almost directly to this case. Like the library it's based on, this is clearly for making evil things.
 
+## Installation
+
+Visit [rustup.rs](https://rustup.rs/) to download the Rust tools, then run the following command via cargo:
+
+```shell
+cargo install annatar
+```
+
 ## Usage
 
 ```shell
