@@ -48,6 +48,10 @@ White space between the scaling modifier (`\1.3` above) and the annotation (`thi
 
 > Note: for those of you who are plagued by morbid curiosity, here's the regular expression used: `\\(?P<scale>\d+(\.\d+)?)\s+(?P<caption>.+)`.
 
+## Version history
+
+- **0.4.0** Add in-band annotation scaling
+
 ## License
 
 Licensed under either of
