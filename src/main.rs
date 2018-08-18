@@ -2,6 +2,7 @@
 extern crate clap;
 
 extern crate artano;
+extern crate regex;
 extern crate reqwest;
 
 mod application;

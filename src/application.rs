@@ -17,8 +17,12 @@ impl App {
             .map_err(|e| Error::not_found("Base image not found", e))
             .and_then(|buf| Canvas::read_from_buffer(&buf).map_err(Error::bad_image))?;
 
-        for annotation in &options.annotations {
-            canvas.add_annotation(annotation, &font, options.scale_mult);
+        for scaled_annotation in &options.annotations {
+            canvas.add_annotation(
+                &scaled_annotation.annotation,
+                &font,
+                scaled_annotation.scale_multiplier
+            );
         }
 
         canvas.render();

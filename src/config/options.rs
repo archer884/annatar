@@ -1,5 +1,5 @@
-use artano::Annotation;
 use config::resource::Resource;
+use config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser};
 use error::Cause;
 use std::borrow::Cow;
 use std::error;
@@ -15,10 +15,9 @@ type Result<T> = result::Result<T, BuildOptionsError>;
 #[derive(Debug)]
 pub struct Options {
     pub base_image: Resource,
-    pub annotations: Vec<Annotation>,
+    pub annotations: Vec<ScaledAnnotation>,
     pub output_path: PathBuf,
     pub output_format: OutputFormat,
-    pub scale_mult: f32,
     pub font_path: PathBuf,
     pub debug: bool,
 }
@@ -37,7 +36,7 @@ impl Options {
 
 pub struct OptionsBuilder {
     base_image: Option<String>,
-    annotations: Vec<Annotation>,
+    annotations: Vec<ScaledAnnotation>,
     output_path: Option<String>,
     output_format: OutputFormat,
     scale_mult: f32,
@@ -93,7 +92,6 @@ impl OptionsBuilder {
             annotations,
             output_path,
             output_format,
-            scale_mult: self.scale_mult,
             font_path: self.font_path.to_string().into(),
             debug: self.debug,
         })
@@ -181,20 +179,22 @@ fn read_command() -> Result<Options> {
         options.font_path = Cow::from(font_path.to_string());
     }
 
+    let parser = ScaledAnnotationParser::new();
+
     if let Some(caption) = matches.value_of("caption") {
-        options.annotations.push(Annotation::bottom(caption));
+        options.annotations.push(parser.bottom(options.scale_mult, caption));
     }
 
     if let Some(caption) = matches.value_of("top") {
-        options.annotations.push(Annotation::top(caption));
+        options.annotations.push(parser.top(options.scale_mult, caption));
     }
 
     if let Some(caption) = matches.value_of("middle") {
-        options.annotations.push(Annotation::middle(caption));
+        options.annotations.push(parser.middle(options.scale_mult, caption));
     }
 
     if let Some(caption) = matches.value_of("bottom") {
-        options.annotations.push(Annotation::bottom(caption));
+        options.annotations.push(parser.bottom(options.scale_mult, caption));
     }
 
     options.output_format = {
