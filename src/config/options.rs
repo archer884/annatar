@@ -73,9 +73,10 @@ impl OptionsBuilder {
         }
 
         let output_format = self.output_format;
-        let output_path = self.output_path.map(|s| s.into()).unwrap_or_else(|| {
-            create_output_file_path(&input_path, output_format)
-        });
+        let output_path = self
+            .output_path
+            .map(|s| s.into())
+            .unwrap_or_else(|| create_output_file_path(&input_path, output_format));
 
         let annotations = if self.annotations.is_empty() {
             return Err(BuildOptionsError {
@@ -138,8 +139,7 @@ fn read_command() -> Result<Options> {
 
     let encoding_group = ArgGroup::with_name("enc_group").args(&["jpg", "png"]);
 
-    let app =
-        clap_app!(annatar =>
+    let app = clap_app!(annatar =>
         (version: crate_version!())
         (author: crate_authors!())
         (about: crate_description!())
@@ -167,13 +167,13 @@ fn read_command() -> Result<Options> {
     options.output_path = matches.value_of("output").map(|s| s.to_string());
 
     if let Some(scale_multiplier) = matches.value_of("scale") {
-        let multiplier = scale_multiplier.parse::<f32>().map_err(|e| {
-            BuildOptionsError {
+        let multiplier = scale_multiplier
+            .parse::<f32>()
+            .map_err(|e| BuildOptionsError {
                 kind: BuildOptionsErrorKind::ScalingMultiplier,
                 description: Cow::from("Scaling multiplier must be a decimal value"),
                 cause: Some(Box::new(e)),
-            }
-        })?;
+            })?;
         options.scale_mult = multiplier;
     }
 
