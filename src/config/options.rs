@@ -182,19 +182,27 @@ fn read_command() -> Result<Options> {
     let parser = ScaledAnnotationParser::new();
 
     if let Some(caption) = matches.value_of("caption") {
-        options.annotations.push(parser.bottom(options.scale_mult, caption));
+        options
+            .annotations
+            .push(parser.bottom(options.scale_mult, caption));
     }
 
     if let Some(caption) = matches.value_of("top") {
-        options.annotations.push(parser.top(options.scale_mult, caption));
+        options
+            .annotations
+            .push(parser.top(options.scale_mult, caption));
     }
 
     if let Some(caption) = matches.value_of("middle") {
-        options.annotations.push(parser.middle(options.scale_mult, caption));
+        options
+            .annotations
+            .push(parser.middle(options.scale_mult, caption));
     }
 
     if let Some(caption) = matches.value_of("bottom") {
-        options.annotations.push(parser.bottom(options.scale_mult, caption));
+        options
+            .annotations
+            .push(parser.bottom(options.scale_mult, caption));
     }
 
     options.output_format = {

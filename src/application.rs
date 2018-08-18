@@ -21,7 +21,7 @@ impl App {
             canvas.add_annotation(
                 &scaled_annotation.annotation,
                 &font,
-                scaled_annotation.scale_multiplier
+                scaled_annotation.scale_multiplier,
             );
         }
 
