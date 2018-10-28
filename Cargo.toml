@@ -15,7 +15,7 @@ Full readme available at: https://github.com/archer884/annatar
 """
 
 [dependencies]
-artano = "0.2.6"
+artano = "0.2"
 clap = "2.32"
 regex = "1.0"
 reqwest = "0.8"
