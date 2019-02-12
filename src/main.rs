@@ -1,10 +1,6 @@
 #[macro_use]
 extern crate clap;
 
-extern crate artano;
-extern crate regex;
-extern crate reqwest;
-
 mod application;
 mod config;
 mod error;
@@ -19,8 +15,8 @@ fn main() {
     match Options::from_args() {
         Ok(options) => {
             if let Err(e) = App.run(&options) {
-                if let Some(cause) = e.cause() {
-                    println!("{}: {}", e, cause);
+                if let Some(source) = e.source() {
+                    println!("{}: {}", e, source);
                 } else {
                     println!("{}", e);
                 }

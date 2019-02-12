@@ -1,4 +1,3 @@
-use reqwest;
 use std::error;
 use std::fmt;
 use std::io;
@@ -31,12 +30,8 @@ impl fmt::Display for ResourceError {
 }
 
 impl error::Error for ResourceError {
-    fn description(&self) -> &str {
-        error::Error::description(&*self.0)
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        error::Error::cause(&*self.0)
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        Some(self.0.as_ref())
     }
 }
 
@@ -59,18 +54,12 @@ impl Resource {
 }
 
 fn load_web_resource(s: &str) -> Result<Vec<u8>> {
-    use std::io::Read;
-    let mut response = reqwest::get(s)?;
     let mut buf = Vec::new();
-    response.read_to_end(&mut buf)?;
+    reqwest::get(s)?.copy_to(&mut buf)?;
     Ok(buf)
 }
 
 fn load_local_resource(s: &str) -> Result<Vec<u8>> {
-    use std::fs::File;
-    use std::io::{BufReader, Read};
-    let mut file = BufReader::new(File::open(s)?);
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    Ok(buf)
+    use std::fs;
+    Ok(fs::read(s)?)
 }

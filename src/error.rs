@@ -1,4 +1,4 @@
-use config::resource::ResourceError;
+use crate::config::resource::ResourceError;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;

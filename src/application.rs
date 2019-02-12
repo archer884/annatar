@@ -1,6 +1,8 @@
+use crate::{
+    config::{Options, OutputFormat},
+    error::Error,
+};
 use artano::{self, Canvas, Typeface};
-use config::{Options, OutputFormat};
-use error::Error;
 use std::path::Path;
 use std::result;
 
@@ -11,11 +13,12 @@ pub struct App;
 impl App {
     pub fn run(&self, options: &Options) -> Result<()> {
         let font = build_font(&options.font_path)?;
-        let mut canvas = options
+        let buffer = options
             .base_image
             .get()
-            .map_err(|e| Error::not_found("Base image not found", e))
-            .and_then(|buf| Canvas::read_from_buffer(&buf).map_err(Error::bad_image))?;
+            .map_err(|e| Error::not_found("Base image not found", e))?;
+
+        let mut canvas = Canvas::read_from_buffer(&buffer).map_err(Error::bad_image)?;
 
         for scaled_annotation in &options.annotations {
             canvas.add_annotation(

@@ -1,6 +1,8 @@
-use config::resource::Resource;
-use config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser};
-use error::Cause;
+use crate::{
+    config::resource::Resource,
+    config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
+    error::Cause,
+};
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
