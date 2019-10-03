@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
-pub type Cause = Box<error::Error>;
+pub type Cause = Box<dyn error::Error + 'static>;
 
 pub trait IntoCause: error::Error + Sized + 'static {
     fn into(self) -> Cause {
@@ -68,12 +68,8 @@ impl fmt::Display for Error {
 }
 
 impl error::Error for Error {
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        self.cause.as_ref().map(|cause| cause.as_ref())
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        self.cause.as_ref().map(AsRef::as_ref)
     }
 }
 

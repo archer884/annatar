@@ -121,12 +121,8 @@ impl fmt::Display for BuildOptionsError {
 }
 
 impl error::Error for BuildOptionsError {
-    fn description(&self) -> &str {
-        &self.description
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        self.cause.as_ref().map(|cause| cause.as_ref())
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        self.cause.as_ref().map(AsRef::as_ref)
     }
 }
 

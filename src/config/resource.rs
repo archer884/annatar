@@ -9,7 +9,7 @@ type Result<T> = result::Result<T, ResourceError>;
 pub struct Resource(String);
 
 #[derive(Debug)]
-pub struct ResourceError(Box<error::Error>);
+pub struct ResourceError(Box<dyn error::Error + 'static>);
 
 impl From<io::Error> for ResourceError {
     fn from(error: io::Error) -> Self {
