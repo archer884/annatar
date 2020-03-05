@@ -55,7 +55,7 @@ impl Resource {
 
 fn load_web_resource(s: &str) -> Result<Vec<u8>> {
     let mut buf = Vec::new();
-    reqwest::get(s)?.copy_to(&mut buf)?;
+    reqwest::blocking::get(s)?.copy_to(&mut buf)?;
     Ok(buf)
 }
 
