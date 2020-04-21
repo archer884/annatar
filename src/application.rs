@@ -1,13 +1,20 @@
 use crate::config::{Options, OutputFormat};
-use artano::{self, Canvas, Typeface};
+use artano::{self, Canvas};
 use std::path::Path;
+
+static DEFAULT_FONT_NAME: &str = "Impact";
 
 pub struct App;
 
 impl App {
     pub fn run(&self, options: &Options) -> crate::Result<()> {
-        let font = build_font(&options.font_path)?;
         let buffer = options.base_image.get()?;
+        let font = options
+            .font_name
+            .as_ref()
+            .map(|name| artano::load_font(&name))
+            .unwrap_or_else(|| artano::load_font(DEFAULT_FONT_NAME))?;
+
         let mut canvas = Canvas::read_from_buffer(&buffer)?;
 
         for scaled_annotation in &options.annotations {
@@ -21,14 +28,6 @@ impl App {
         canvas.render();
         save_pixels(&options.output_path, &canvas, options.output_format)
     }
-}
-
-fn build_font(path: &Path) -> crate::Result<Typeface> {
-    use std::fs::File;
-    use std::io::BufReader;
-
-    let data = File::open(path).map(BufReader::new)?;
-    Ok(artano::load_typeface(data)?)
 }
 
 fn save_pixels<P: AsRef<Path>>(

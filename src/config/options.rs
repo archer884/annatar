@@ -2,7 +2,6 @@ use crate::{
     config::resource::Resource,
     config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
 };
-use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 use structopt::{clap::ArgGroup, StructOpt};
 
@@ -58,7 +57,7 @@ struct Opt {
     #[structopt(short = "s", long)]
     scale: Option<f32>,
 
-    /// Sets the path of the font to be used (default: Impact)
+    /// Sets the name of the font to be used
     #[structopt(short = "f", long)]
     font: Option<String>,
 
@@ -99,7 +98,7 @@ pub struct Options {
     pub annotations: Vec<ScaledAnnotation>,
     pub output_path: PathBuf,
     pub output_format: OutputFormat,
-    pub font_path: PathBuf,
+    pub font_name: Option<String>,
     pub debug: bool,
 }
 
@@ -136,12 +135,7 @@ impl Options {
             annotations,
             output_path: output_path.into(),
             output_format,
-            font_path: opt
-                .font
-                .map(Cow::from)
-                .unwrap_or_else(default_font)
-                .to_string()
-                .into(),
+            font_name: opt.font,
             debug: opt.debug,
         }
     }
@@ -181,19 +175,4 @@ fn create_output_file_path(path: impl AsRef<Path>, format: OutputFormat) -> Stri
             OutputFormat::Jpg => String::from("annotated.jpg"),
             OutputFormat::Png => String::from("annotated.png"),
         })
-}
-
-#[cfg(target_os = "windows")]
-fn default_font() -> Cow<'static, str> {
-    Cow::from("C:/Windows/Fonts/Impact.ttf")
-}
-
-#[cfg(target_os = "macos")]
-fn default_font() -> Cow<'static, str> {
-    Cow::from("/Library/Fonts/Impact.ttf")
-}
-
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
-fn default_font() -> Cow<'static, str> {
-    unimplemented!("Honestly, getting a font on Linux is going to be an adventure.");
 }
