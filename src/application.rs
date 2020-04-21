@@ -1,24 +1,14 @@
-use crate::{
-    config::{Options, OutputFormat},
-    error::Error,
-};
+use crate::config::{Options, OutputFormat};
 use artano::{self, Canvas, Typeface};
 use std::path::Path;
-use std::result;
-
-type Result<T> = result::Result<T, Error>;
 
 pub struct App;
 
 impl App {
-    pub fn run(&self, options: &Options) -> Result<()> {
+    pub fn run(&self, options: &Options) -> crate::Result<()> {
         let font = build_font(&options.font_path)?;
-        let buffer = options
-            .base_image
-            .get()
-            .map_err(|e| Error::not_found("Base image not found", e))?;
-
-        let mut canvas = Canvas::read_from_buffer(&buffer).map_err(Error::bad_image)?;
+        let buffer = options.base_image.get()?;
+        let mut canvas = Canvas::read_from_buffer(&buffer)?;
 
         for scaled_annotation in &options.annotations {
             canvas.add_annotation(
@@ -33,31 +23,31 @@ impl App {
     }
 }
 
-fn build_font(path: &Path) -> Result<Typeface> {
+fn build_font(path: &Path) -> crate::Result<Typeface> {
     use std::fs::File;
     use std::io::BufReader;
 
-    let data = File::open(path)
-        .map(BufReader::new)
-        .map_err(|e| Error::not_found("Font not found", e))?;
-
-    artano::load_typeface(data).map_err(|e| Error::io("Unable to read font", e))
+    let data = File::open(path).map(BufReader::new)?;
+    Ok(artano::load_typeface(data)?)
 }
 
-fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: OutputFormat) -> Result<()> {
+fn save_pixels<P: AsRef<Path>>(
+    path: P,
+    canvas: &Canvas,
+    format: OutputFormat,
+) -> crate::Result<()> {
     use std::fs::OpenOptions;
 
     let mut out = OpenOptions::new()
         .write(true)
         .create(true)
         .truncate(true)
-        .open(path.as_ref())
-        .map_err(|e| Error::io("Unable to write to output", e))?;
+        .open(path.as_ref())?;
 
-    let result = match format {
-        OutputFormat::Png => canvas.save_png(&mut out),
-        OutputFormat::Jpg => canvas.save_jpg(&mut out),
-    };
+    match format {
+        OutputFormat::Png => canvas.save_png(&mut out)?,
+        OutputFormat::Jpg => canvas.save_jpg(&mut out)?,
+    }
 
-    result.map_err(|e| Error::io("Unable to save image to output", e))
+    Ok(())
 }

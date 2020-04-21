@@ -62,8 +62,13 @@ fn parse_scaled_annotation(pattern: &Regex, s: &str) -> (Option<f32>, String) {
     //
     // It's valid to escape the leading \ with \\.
 
-    // Annotation does not contain in-band scaling information.
-    if !(s.starts_with('\\') && !s.starts_with("\\\\")) {
+    // Leading slash is escaped.
+    if s.starts_with("\\\\") {
+        return (None, s[1..].into());
+    }
+
+    // Annotation does not contain in-band scaling.
+    if !s.starts_with('\\') {
         return (None, s.into());
     }
 
@@ -89,7 +94,7 @@ mod tests {
     use super::{ScaledAnnotation, ScaledAnnotationParser};
 
     #[test]
-    fn scaled_annotation_parser_works() {
+    fn in_band_scaling_works() {
         let parser = ScaledAnnotationParser::new();
         let caption = "\\2.0 Hello, world!";
         let ScaledAnnotation {
@@ -99,5 +104,19 @@ mod tests {
 
         assert_eq!(2.0, scale_multiplier);
         assert_eq!("Hello, world!", annotation.text);
+    }
+
+    #[test]
+    fn escaped_leading_slashes_work() {
+        let parser = ScaledAnnotationParser::new();
+        let caption = "\\\\ESCAPED SLASHES!\\";
+
+        let ScaledAnnotation {
+            scale_multiplier,
+            annotation,
+        } = parser.top(1.0, caption);
+
+        assert_eq!(1.0, scale_multiplier);
+        assert_eq!("\\ESCAPED SLASHES!\\", annotation.text);
     }
 }

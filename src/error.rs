@@ -1,84 +1,47 @@
 use crate::config::resource::ResourceError;
-use std::borrow::Cow;
-use std::error;
-use std::fmt;
-
-pub type Cause = Box<dyn error::Error + 'static>;
-
-pub trait IntoCause: error::Error + Sized + 'static {
-    fn into(self) -> Cause {
-        Box::new(self)
-    }
-}
-
-impl<T: error::Error + Sized + 'static> IntoCause for T {}
+use std::{error, fmt, io};
 
 #[derive(Debug)]
-pub struct Error {
-    kind: ErrorKind,
-    description: Cow<'static, str>,
-    cause: Option<Cause>,
-}
-
-#[derive(Debug)]
-pub enum ErrorKind {
-    BadImage,
-    IO,
-    NotFound,
-}
-
-impl Error {
-    pub fn io<D, E>(desc: D, error: E) -> Self
-    where
-        D: Into<Cow<'static, str>>,
-        E: IntoCause,
-    {
-        Self {
-            kind: ErrorKind::IO,
-            description: desc.into(),
-            cause: Some(error.into()),
-        }
-    }
-
-    pub fn not_found<D, E>(desc: D, error: E) -> Self
-    where
-        D: Into<Cow<'static, str>>,
-        E: IntoCause,
-    {
-        Self {
-            kind: ErrorKind::NotFound,
-            description: desc.into(),
-            cause: Some(error.into()),
-        }
-    }
-
-    pub fn bad_image<E: IntoCause>(error: E) -> Self {
-        Self {
-            kind: ErrorKind::BadImage,
-            description: Cow::from("We were unable to interpret this image"),
-            cause: Some(error.into()),
-        }
-    }
+pub enum Error {
+    Image(artano::Error),
+    IO(io::Error),
+    Resource(ResourceError),
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(&self.description)
+        match self {
+            Error::Image(e) => write!(f, "Bad image: {}", e),
+            Error::Resource(e) => write!(f, "Unable to retreive the requested resource: {}", e),
+            Error::IO(e) => e.fmt(f),
+        }
     }
 }
 
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        self.cause.as_ref().map(AsRef::as_ref)
+        match self {
+            Error::IO(e) => Some(e),
+            Error::Resource(e) => Some(e),
+
+            _ => None,
+        }
     }
 }
 
+impl From<artano::Error> for Error {
+    fn from(e: artano::Error) -> Self {
+        Error::Image(e)
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        Error::IO(e)
+    }
+}
 impl From<ResourceError> for Error {
-    fn from(error: ResourceError) -> Self {
-        Self {
-            kind: ErrorKind::NotFound,
-            description: Cow::from("Unable to retrieve the requested resource"),
-            cause: Some(Box::new(error)),
-        }
+    fn from(e: ResourceError) -> Self {
+        Error::Resource(e)
     }
 }
