@@ -86,7 +86,7 @@ impl Opt {
 
         let extension = self.output.as_ref().and_then(|s| read_extension(s));
         match extension.as_ref().map(AsRef::as_ref) {
-            Some("JPG") => OutputFormat::Jpg,
+            Some("JPG") | Some("JPEG") => OutputFormat::Jpg,
             Some("PNG") => OutputFormat::Png,
             _ => self.format.get_format(),
         }
@@ -114,7 +114,8 @@ impl Options {
         let mut opt: Opt = StructOpt::from_args();
 
         if opt.rightsholder_protections {
-            println!("Rightsholder Protections Active\n\n\
+            println!(
+                "Rightsholder Protections Active\n\n\
                 Your IP has been reported. Please turn off your PC and walk away.\n\
                 Trust and Safety personnel have been dispatched to your location.\n\n\
                 Have a nice day."
