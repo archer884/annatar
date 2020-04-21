@@ -12,8 +12,8 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::Image(e) => write!(f, "Bad image: {}", e),
-            Error::Resource(e) => write!(f, "Unable to retreive the requested resource: {}", e),
             Error::IO(e) => e.fmt(f),
+            Error::Resource(e) => write!(f, "Unable to retreive the requested resource: {}", e),
         }
     }
 }

@@ -66,6 +66,10 @@ struct Opt {
     #[structopt(short = "d", long)]
     debug: bool,
 
+    /// EU/British compatibility mode
+    #[structopt(long)]
+    rightsholder_protections: bool,
+
     #[structopt(flatten)]
     annotations: Annotations,
     #[structopt(flatten)]
@@ -108,6 +112,15 @@ pub enum OutputFormat {
 impl Options {
     pub fn from_args() -> Options {
         let mut opt: Opt = StructOpt::from_args();
+
+        if opt.rightsholder_protections {
+            println!("Rightsholder Protections Active\n\n\
+                Your IP has been reported. Please turn off your PC and walk away.\n\
+                Trust and Safety personnel have been dispatched to your location.\n\n\
+                Have a nice day."
+            );
+            std::process::exit(1);
+        }
 
         let output_format = opt.get_format();
         let output_path = opt
