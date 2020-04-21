@@ -1,6 +1,6 @@
 [package]
 name = "annatar"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2018"
 authors = ["J/A <archer884@gmail.com>"]
 license = "MIT/Apache-2.0"
