@@ -8,5 +8,5 @@ use config::Options;
 pub type Result<T> = std::result::Result<T, error::Error>;
 
 fn main() -> Result<()> {
-    App.run(&Options::from_args())
+    App.run(Options::from_args())
 }

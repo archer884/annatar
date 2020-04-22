@@ -2,6 +2,7 @@ use crate::{
     config::resource::Resource,
     config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
 };
+use std::env;
 use std::path::{Path, PathBuf};
 use structopt::{clap::ArgGroup, StructOpt};
 
@@ -43,6 +44,15 @@ impl Format {
     }
 }
 
+#[derive(Clone, Debug, StructOpt)]
+enum SubCommand {
+    /// List all system fonts
+    List,
+
+    /// Search for a system font with a similar name
+    Search { query: String },
+}
+
 /// A command line tool for making memes
 #[derive(Clone, Debug, StructOpt)]
 struct Opt {
@@ -73,6 +83,9 @@ struct Opt {
     annotations: Annotations,
     #[structopt(flatten)]
     format: Format,
+
+    #[structopt(subcommand)]
+    cmd: Option<SubCommand>,
 }
 
 impl Opt {
@@ -93,13 +106,22 @@ impl Opt {
 }
 
 #[derive(Debug)]
-pub struct Options {
+pub struct AnnotationOptions {
     pub base_image: Resource,
     pub annotations: Vec<ScaledAnnotation>,
     pub output_path: PathBuf,
     pub output_format: OutputFormat,
     pub font_name: Option<String>,
     pub debug: bool,
+}
+
+#[derive(Debug)]
+pub enum Options {
+    Annotate(AnnotationOptions),
+    List,
+    Search {
+        query: String
+    },
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -110,8 +132,16 @@ pub enum OutputFormat {
 
 impl Options {
     pub fn from_args() -> Options {
-        let mut opt: Opt = StructOpt::from_args();
+        // Check to see if the command parses as one of our supported subcommands. If not, we'll
+        // proceed as usual. If so, this is some kind of font query instead.
+        // if let Ok(command) = Command::from_iter_safe(env::args()) {
+        //     return match command {
+        //         Command::List => Options::List,
+        //         Command::Search { query } => Options::Search { query },
+        //     };
+        // }
 
+        let mut opt: Opt = StructOpt::from_args();
         if opt.rightsholder_protections {
             println!(
                 "Rightsholder Protections Active\n\n\
@@ -130,13 +160,22 @@ impl Options {
         let scale = opt.scale.unwrap_or(1.0);
         let annotations = get_annotations(scale, &opt.annotations);
 
-        Options {
+        Options::Annotate(AnnotationOptions {
             base_image: Resource::new(opt.image),
             annotations,
             output_path: output_path.into(),
             output_format,
             font_name: opt.font,
             debug: opt.debug,
+        })
+    }
+}
+
+impl From<SubCommand> for Options {
+    fn from(command: SubCommand) -> Self {
+        match command {
+            SubCommand::List => Options::List,
+            SubCommand::Search { query } => Options::Search { query },
         }
     }
 }
