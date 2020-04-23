@@ -1,9 +1,6 @@
 use crate::config::{AnnotationOptions, Options, OutputFormat};
 use artano::{self, Canvas};
-use font_kit::{
-    source::SystemSource,
-    font::Font,
-};
+use font_kit::{font::Font, handle::Handle, source::SystemSource};
 use std::path::Path;
 
 static DEFAULT_FONT_NAME: &str = "Impact";
@@ -48,12 +45,7 @@ fn list_fonts() -> crate::Result<()> {
     // This will only reveal those fonts which have a postscript name, and it will reveal them
     // only by postscript name, but that's the name we use to look them up, so that's fine.
     if let Ok(handles) = source.all_fonts() {
-        let mut names: Vec<_> = handles
-            .into_iter()
-            .filter_map(|handle| Font::from_handle(&handle).ok())
-            .filter_map(|font| font.postscript_name())
-            .collect();
-
+        let mut names: Vec<_> = font_names_from_handles(handles).collect();
         names.sort();
         names.dedup();
 
@@ -66,7 +58,37 @@ fn list_fonts() -> crate::Result<()> {
 }
 
 fn query_fonts(query: impl AsRef<str>) -> crate::Result<()> {
-    unimplemented!()
+    let query = query.as_ref().to_uppercase();
+    let source = SystemSource::new();
+
+    if let Ok(handles) = source.all_fonts() {
+        let mut names: Vec<_> = font_names_from_handles(handles)
+            .map(|name| {
+                let uppercase = name.to_uppercase();
+                (name, uppercase)
+            })
+            .collect();
+
+        names.sort_by(|a, b| a.0.cmp(&b.0));
+        names.dedup_by(|a, b| a.0 == b.0);
+
+        let filtered_names = names.into_iter().filter(|x| x.1.contains(&query));
+
+        for (name, _) in filtered_names {
+            println!("{}", name);
+        }
+    }
+
+    Ok(())
+}
+
+fn font_names_from_handles(
+    handles: impl IntoIterator<Item = Handle>,
+) -> impl Iterator<Item = String> {
+    handles
+        .into_iter()
+        .filter_map(|handle| Font::from_handle(&handle).ok())
+        .filter_map(|font| font.postscript_name())
 }
 
 fn save_pixels<P: AsRef<Path>>(

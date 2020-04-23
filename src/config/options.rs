@@ -2,7 +2,6 @@ use crate::{
     config::resource::Resource,
     config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
 };
-use std::env;
 use std::path::{Path, PathBuf};
 use structopt::{clap::ArgGroup, StructOpt};
 
@@ -44,18 +43,21 @@ impl Format {
     }
 }
 
-#[derive(Clone, Debug, StructOpt)]
-enum SubCommand {
+/// A command line tool for making memes
+#[derive(Debug, StructOpt)]
+enum Opt {
+    // #[structopt(default_command)]
+    Annotate(InnerOptions),
     /// List all system fonts
     List,
-
     /// Search for a system font with a similar name
-    Search { query: String },
+    Search {
+        query: String,
+    },
 }
 
-/// A command line tool for making memes
-#[derive(Clone, Debug, StructOpt)]
-struct Opt {
+#[derive(Debug, StructOpt)]
+struct InnerOptions {
     /// Path to an image to be annotated
     image: String,
 
@@ -83,12 +85,9 @@ struct Opt {
     annotations: Annotations,
     #[structopt(flatten)]
     format: Format,
-
-    #[structopt(subcommand)]
-    cmd: Option<SubCommand>,
 }
 
-impl Opt {
+impl InnerOptions {
     fn get_format(&self) -> OutputFormat {
         fn read_extension(s: &str) -> Option<String> {
             Path::new(s)
@@ -119,9 +118,7 @@ pub struct AnnotationOptions {
 pub enum Options {
     Annotate(AnnotationOptions),
     List,
-    Search {
-        query: String
-    },
+    Search { query: String },
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -132,50 +129,37 @@ pub enum OutputFormat {
 
 impl Options {
     pub fn from_args() -> Options {
-        // Check to see if the command parses as one of our supported subcommands. If not, we'll
-        // proceed as usual. If so, this is some kind of font query instead.
-        // if let Ok(command) = Command::from_iter_safe(env::args()) {
-        //     return match command {
-        //         Command::List => Options::List,
-        //         Command::Search { query } => Options::Search { query },
-        //     };
-        // }
+        match Opt::from_args() {
+            Opt::Annotate(mut options) => {
+                if options.rightsholder_protections {
+                    println!(
+                        "Rightsholder Protections Active\n\n\
+                        Your IP has been reported. Please turn off your PC and walk away.\n\
+                        Trust and Safety personnel have been dispatched to your location.\n\n\
+                        Have a nice day."
+                    );
+                    std::process::exit(1);
+                }
 
-        let mut opt: Opt = StructOpt::from_args();
-        if opt.rightsholder_protections {
-            println!(
-                "Rightsholder Protections Active\n\n\
-                Your IP has been reported. Please turn off your PC and walk away.\n\
-                Trust and Safety personnel have been dispatched to your location.\n\n\
-                Have a nice day."
-            );
-            std::process::exit(1);
-        }
+                let output_format = options.get_format();
+                let output_path = options
+                    .output
+                    .take()
+                    .unwrap_or_else(|| create_output_file_path(&options.image, output_format));
+                let scale = options.scale.unwrap_or(1.0);
+                let annotations = get_annotations(scale, &options.annotations);
 
-        let output_format = opt.get_format();
-        let output_path = opt
-            .output
-            .take()
-            .unwrap_or_else(|| create_output_file_path(&opt.image, output_format));
-        let scale = opt.scale.unwrap_or(1.0);
-        let annotations = get_annotations(scale, &opt.annotations);
-
-        Options::Annotate(AnnotationOptions {
-            base_image: Resource::new(opt.image),
-            annotations,
-            output_path: output_path.into(),
-            output_format,
-            font_name: opt.font,
-            debug: opt.debug,
-        })
-    }
-}
-
-impl From<SubCommand> for Options {
-    fn from(command: SubCommand) -> Self {
-        match command {
-            SubCommand::List => Options::List,
-            SubCommand::Search { query } => Options::Search { query },
+                Options::Annotate(AnnotationOptions {
+                    base_image: Resource::new(options.image),
+                    annotations,
+                    output_path: output_path.into(),
+                    output_format,
+                    font_name: options.font,
+                    debug: options.debug,
+                })
+            }
+            Opt::List => Options::List,
+            Opt::Search { query } => Options::Search { query },
         }
     }
 }
