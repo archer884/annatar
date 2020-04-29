@@ -1,4 +1,4 @@
-use crate::config::resource::ResourceError;
+use crate::config::ResourceError;
 use std::{error, fmt, io};
 
 #[derive(Debug)]

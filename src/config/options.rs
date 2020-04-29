@@ -3,116 +3,123 @@ use crate::{
     config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
 };
 use std::path::{Path, PathBuf};
-use structopt::{clap::ArgGroup, StructOpt};
-
-#[derive(Clone, Debug, StructOpt)]
-#[structopt(group = ArgGroup::with_name("annotation").required(true).multiple(true))]
-struct Annotations {
-    /// A message to be added to the top of the image
-    #[structopt(short, long, group = "annotation")]
-    top: Option<String>,
-
-    /// A message to be added to the middle of the image
-    #[structopt(short, long, group = "annotation")]
-    middle: Option<String>,
-
-    /// A message to be added to the bottom of the image
-    #[structopt(short, long, group = "annotation")]
-    bottom: Option<String>,
-}
-
-#[derive(Clone, Debug, StructOpt)]
-#[structopt(group = ArgGroup::with_name("format"))]
-struct Format {
-    /// Generate output image as jpg (ignored if output path provided)
-    #[structopt(long, group = "format")]
-    jpg: bool,
-
-    /// Generate output image as png (ignored if output path provided)
-    #[structopt(long, group = "format")]
-    png: bool,
-}
-
-impl Format {
-    fn get_format(&self) -> OutputFormat {
-        if self.png {
-            OutputFormat::Png
-        } else {
-            OutputFormat::Jpg
-        }
-    }
-}
-
-/// A command line tool for making memes
-#[derive(Clone, Debug, StructOpt)]
-struct Opt {
-    /// Path to an image to be annotated
-    image: String,
-
-    /// Sets an output path for the new image (default: <image path>/<image name>-annotated.<ext>
-    #[structopt(short = "o", long)]
-    output: Option<String>,
-
-    /// Sets the global scale multiplier for annotations
-    #[structopt(short = "s", long)]
-    scale: Option<f32>,
-
-    /// Sets the name of the font to be used
-    #[structopt(short = "f", long)]
-    font: Option<String>,
-
-    /// Save intermediate artifacts to disk
-    #[structopt(short = "d", long)]
-    debug: bool,
-
-    /// EU/British compatibility mode
-    #[structopt(long)]
-    rightsholder_protections: bool,
-
-    #[structopt(flatten)]
-    annotations: Annotations,
-    #[structopt(flatten)]
-    format: Format,
-}
-
-impl Opt {
-    fn get_format(&self) -> OutputFormat {
-        fn read_extension(s: &str) -> Option<String> {
-            Path::new(s)
-                .extension()
-                .map(|ext| ext.to_str().unwrap().to_uppercase())
-        }
-
-        let extension = self.output.as_ref().and_then(|s| read_extension(s));
-        match extension.as_ref().map(AsRef::as_ref) {
-            Some("JPG") | Some("JPEG") => OutputFormat::Jpg,
-            Some("PNG") => OutputFormat::Png,
-            _ => self.format.get_format(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Options {
-    pub base_image: Resource,
-    pub annotations: Vec<ScaledAnnotation>,
-    pub output_path: PathBuf,
-    pub output_format: OutputFormat,
-    pub font_name: Option<String>,
-    pub debug: bool,
-}
 
 #[derive(Copy, Clone, Debug)]
-pub enum OutputFormat {
+pub enum Format {
     Jpg,
     Png,
 }
 
-impl Options {
-    pub fn from_args() -> Options {
-        let mut opt: Opt = StructOpt::from_args();
+#[derive(Clone, Debug)]
+pub struct Annotate {
+    pub base_image: Resource,
+    pub annotations: Vec<ScaledAnnotation>,
+    pub output_path: PathBuf,
+    pub output_format: Format,
+    pub font_name: Option<String>,
+    pub debug: bool,
+}
 
-        if opt.rightsholder_protections {
+#[derive(Clone, Debug)]
+pub enum Command {
+    Annotate(Annotate),
+    ListFonts,
+    SearchFonts { query: String },
+}
+
+impl Command {
+    pub fn from_args() -> Self {
+        use clap::{
+            clap_app, crate_authors, crate_description, crate_version, value_t_or_exit,
+            AppSettings, Arg, ArgGroup, SubCommand,
+        };
+
+        let args = {
+            // Build app without annotation or format groups
+            let app = clap_app!(annatar =>
+                (version: crate_version!())
+                (author: crate_authors!())
+                (about: crate_description!())
+                (@arg IMAGE: +takes_value +required "Path to an image to be annotated")
+                (@arg OUTPUT: -o --output +takes_value "Sets an output path for the new image (default: <image path>/<image name>-annotated.<ext>")
+                (@arg SCALE: -s --scale +takes_value "Sets the global scale multiplier for annotations")
+                (@arg FONT: -f --font +takes_value "Sets the name of the font to be used")
+                (@arg DEBUG: -d --debug "Save intermediate artifacts to disk")
+                (@arg RIGHTSHOLDER_PROTECTIONS: --rightsholder-protections "EU/British compatibility mode")
+            );
+
+            let search_command = SubCommand::with_name("search-fonts")
+                .about("Search available system fonts")
+                .arg(
+                    Arg::with_name("QUERY")
+                        .required(true)
+                        .takes_value(true)
+                        .help("The name or partial name of a font"),
+                );
+
+            let app = app
+                .subcommand(
+                    SubCommand::with_name("list-fonts").about("List available system fonts"),
+                )
+                .subcommand(search_command);
+
+            // Annotation group
+            let caption = Arg::with_name("CAPTION").takes_value(true);
+            let top = Arg::with_name("TOP")
+                .takes_value(true)
+                .short("t")
+                .long("top");
+            let middle = Arg::with_name("MIDDLE")
+                .takes_value(true)
+                .short("m")
+                .long("middle");
+            let bottom = Arg::with_name("BOTTOM")
+                .takes_value(true)
+                .short("b")
+                .long("bottom");
+            let annotations = ArgGroup::with_name("ANNOTATIONS")
+                .required(true)
+                .multiple(true)
+                .args(&["CAPTION", "TOP", "MIDDLE", "BOTTOM"]);
+            let app = app
+                .arg(caption)
+                .arg(top)
+                .arg(middle)
+                .arg(bottom)
+                .group(annotations);
+
+            // Format group
+            let jpg = Arg::with_name("JPG")
+                .long("jpg")
+                .help("Sets output to JPG format");
+            let png = Arg::with_name("PNG")
+                .long("png")
+                .help("Sets output to PNG format");
+            let formats = ArgGroup::with_name("FORMATS")
+                .required(false)
+                .multiple(false)
+                .args(&["JPG", "PNG"]);
+            let app = app.arg(jpg).arg(png).group(formats);
+
+            // Return args
+            app.settings(&[AppSettings::SubcommandsNegateReqs])
+                .get_matches()
+        };
+
+        // List fonts
+        if let Some(cmd) = args.subcommand_matches("list-fonts") {
+            return Command::ListFonts;
+        }
+
+        // Search fonts
+        if let Some(cmd) = args.subcommand_matches("search-fonts") {
+            return Command::SearchFonts {
+                query: value_t_or_exit!(cmd.value_of("QUERY"), String),
+            };
+        }
+
+        // Annotate
+        if args.is_present("RIGHTSHOLDER_PROTECTIONS") {
             println!(
                 "Rightsholder Protections Active\n\n\
                 Your IP has been reported. Please turn off your PC and walk away.\n\
@@ -122,57 +129,62 @@ impl Options {
             std::process::exit(1);
         }
 
-        let output_format = opt.get_format();
-        let output_path = opt
-            .output
-            .take()
-            .unwrap_or_else(|| create_output_file_path(&opt.image, output_format));
-        let scale = opt.scale.unwrap_or(1.0);
-        let annotations = get_annotations(scale, &opt.annotations);
+        let image = args.value_of("IMAGE").unwrap();
+        let output_format = if args.is_present("PNG") {
+            Format::Png
+        } else {
+            Format::Jpg
+        };
+        let output_path = args
+            .value_of("OUTPUT")
+            .map(ToOwned::to_owned)
+            .unwrap_or_else(|| create_output_file_path(image, output_format))
+            .into();
+        let scale = value_t_or_exit!(args.value_of("SCALE"), f32);
 
-        Options {
-            base_image: Resource::new(opt.image),
+        let annotations = {
+            let parser = ScaledAnnotationParser::new();
+            let mut results = Vec::new();
+
+            if let Some(x) = args.value_of("TOP") {
+                results.push(parser.top(scale, x));
+            }
+
+            if let Some(x) = args.value_of("MIDDLE") {
+                results.push(parser.middle(scale, x));
+            }
+
+            if let Some(x) = args.value_of("BOTTOM").or(args.value_of("CAPTION")) {
+                results.push(parser.bottom(scale, x));
+            }
+
+            results
+        };
+
+        Command::Annotate(Annotate {
+            base_image: Resource::new(image),
             annotations,
-            output_path: output_path.into(),
+            output_path,
             output_format,
-            font_name: opt.font,
-            debug: opt.debug,
-        }
+            font_name: args.value_of("FONT").map(ToOwned::to_owned),
+            debug: args.is_present("DEBUG"),
+        })
     }
 }
 
-fn get_annotations(scale: f32, annotations: &Annotations) -> Vec<ScaledAnnotation> {
-    let mut result = Vec::new();
-    let parser = ScaledAnnotationParser::new();
-
-    if let Some(caption) = &annotations.top {
-        result.push(parser.top(scale, caption));
-    }
-
-    if let Some(caption) = &annotations.middle {
-        result.push(parser.middle(scale, caption));
-    }
-
-    if let Some(caption) = &annotations.bottom {
-        result.push(parser.bottom(scale, caption));
-    }
-
-    result
-}
-
-fn create_output_file_path(path: impl AsRef<Path>, format: OutputFormat) -> String {
+fn create_output_file_path(path: impl AsRef<Path>, format: Format) -> String {
     path.as_ref()
         .file_stem()
         .map(|stem| {
             let stem = stem.to_str().unwrap();
             String::from(stem)
                 + match format {
-                    OutputFormat::Jpg => "-annotated.jpg",
-                    OutputFormat::Png => "-annotated.png",
+                    Format::Jpg => "-annotated.jpg",
+                    Format::Png => "-annotated.png",
                 }
         })
         .unwrap_or_else(|| match format {
-            OutputFormat::Jpg => String::from("annotated.jpg"),
-            OutputFormat::Png => String::from("annotated.png"),
+            Format::Jpg => String::from("annotated.jpg"),
+            Format::Png => String::from("annotated.png"),
         })
 }

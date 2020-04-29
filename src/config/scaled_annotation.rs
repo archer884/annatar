@@ -1,7 +1,7 @@
 use artano::Annotation;
 use regex::Regex;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ScaledAnnotation {
     pub scale_multiplier: f32,
     pub annotation: Annotation,
