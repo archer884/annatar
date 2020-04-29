@@ -56,6 +56,31 @@ White space between the scaling modifier (`\1.3` above) and the annotation (`thi
 
 > Note: for those of you who are plagued by morbid curiosity, here's the regular expression used: `\\(?P<scale>\d+(\.\d+)?)\s+(?P<caption>.+)`.
 
+### Rightsholder protections
+
+We realize that laws in places like Britain or the European Union may not support the concept of "fair use" we have in the United States. This program is explicitly intended to create derivative and transformative works for the purpose of fair and reasonable criticism and commentary, but that may not be a right [afforded to you](https://fee.org/articles/why-it-matters-that-some-rights-are-inalienable/) by those who rule over you in your jurisdiction. If that is the case, we encourage you to use annatar ONLY with the `--rightsholder-protections` flag set.
+
+It may help to create a function similar to the following in your shell profile. The following function is written for [PowerShell](https://github.com/PowerShell/PowerShell).
+
+```powershell
+<#
+.SYNOPSIS
+Invokes annatar with rightsholder protections enabled.
+
+.DESCRIPTION
+This function performs pass-through for all arguments passed to it and adds 
+the --rightsholder-protections flag in order to maintain compatibility with 
+non-US copyright law when using annatar.
+
+.NOTES
+Annatar may print alarming warnings when rightsholder protections are enabled.
+Please ignore these. They will be addressed in a future release.
+#>
+function Invoke-Annatar {
+    annatar $args --rightsholder-protections
+}
+```
+
 ## Version history
 
 - **0.5.5** Give up on structopt and use clap; correct clap-related bugs >.<
