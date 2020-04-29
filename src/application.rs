@@ -1,4 +1,4 @@
-use crate::config::{AnnotationOptions, Options, OutputFormat};
+use crate::config::{Annotate, Command, Format};
 use artano::{self, Canvas};
 use font_kit::{font::Font, handle::Handle, source::SystemSource};
 use std::path::Path;
@@ -8,16 +8,16 @@ static DEFAULT_FONT_NAME: &str = "Impact";
 pub struct App;
 
 impl App {
-    pub fn run(&self, options: Options) -> crate::Result<()> {
-        match options {
-            Options::Annotate(options) => annotate(options),
-            Options::List => list_fonts(),
-            Options::Search { query } => query_fonts(query),
+    pub fn run(&self, command: Command) -> crate::Result<()> {
+        match command {
+            Command::Annotate(options) => annotate(options),
+            Command::ListFonts => list_fonts(),
+            Command::SearchFonts { query } => query_fonts(query),
         }
     }
 }
 
-fn annotate(options: AnnotationOptions) -> crate::Result<()> {
+fn annotate(options: Annotate) -> crate::Result<()> {
     let buffer = options.base_image.get()?;
     let font = options
         .font_name
@@ -91,11 +91,7 @@ fn font_names_from_handles(
         .filter_map(|font| font.postscript_name())
 }
 
-fn save_pixels<P: AsRef<Path>>(
-    path: P,
-    canvas: &Canvas,
-    format: OutputFormat,
-) -> crate::Result<()> {
+fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: Format) -> crate::Result<()> {
     use std::fs::OpenOptions;
 
     let mut out = OpenOptions::new()
@@ -105,8 +101,8 @@ fn save_pixels<P: AsRef<Path>>(
         .open(path.as_ref())?;
 
     match format {
-        OutputFormat::Png => canvas.save_png(&mut out)?,
-        OutputFormat::Jpg => canvas.save_jpg(&mut out)?,
+        Format::Png => canvas.save_png(&mut out)?,
+        Format::Jpg => canvas.save_jpg(&mut out)?,
     }
 
     Ok(())

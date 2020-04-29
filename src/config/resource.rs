@@ -1,15 +1,12 @@
-use std::error;
-use std::fmt;
-use std::io;
-use std::result;
+use std::{error, fmt, io, result};
 
 type Result<T> = result::Result<T, ResourceError>;
 
 #[derive(Debug)]
-pub struct Resource(String);
-
-#[derive(Debug)]
 pub struct ResourceError(Box<dyn error::Error + 'static>);
+
+#[derive(Clone, Debug)]
+pub struct Resource(String);
 
 impl From<io::Error> for ResourceError {
     fn from(error: io::Error) -> Self {
