@@ -107,7 +107,7 @@ impl Command {
         };
 
         // List fonts
-        if let Some(cmd) = args.subcommand_matches("list-fonts") {
+        if args.subcommand_matches("list-fonts").is_some() {
             return Command::ListFonts;
         }
 
@@ -154,7 +154,7 @@ impl Command {
                 results.push(parser.middle(scale, x));
             }
 
-            if let Some(x) = args.value_of("BOTTOM").or(args.value_of("CAPTION")) {
+            if let Some(x) = args.value_of("BOTTOM").or_else(|| args.value_of("CAPTION")) {
                 results.push(parser.bottom(scale, x));
             }
 
