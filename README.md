@@ -21,7 +21,11 @@ annatar foo.jpg \
     --bottom "This text will appear near the bottom of the image."
 ```
 
-Per the usual conventions, `-t`, `-m`, and `-b` are also available as arguments. Additionally, a `-c --caption` argument is available as a synonym for `-b --bottom`.
+Per the usual conventions, `-t`, `-m`, and `-b` are also available as arguments. Additionally, it is possible to supply only a caption as a positional argument, in which case the caption works as a synonym for `--bottom`, e.g.:
+
+```shell
+annatar foo.jpg "This text will appear near the bottom of the image."
+```
 
 Images may be provided as either local paths or URLs; annatar is happy to fetch your picture from the internet for you.
 
@@ -95,11 +99,9 @@ Licensed under either of
  * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
 at your option.
 
-### Contribution
+### Contributions
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any
-additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
 
 [LICENSE-APACHE]: https://github.com/archer884/annatar/blob/master/LICENSE-MIT
 [LICENSE-MIT]: https://github.com/archer884/annatar/blob/master/LICENSE-APACHE
