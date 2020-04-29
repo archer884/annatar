@@ -45,9 +45,17 @@ impl Command {
                 (@arg SCALE: -s --scale +takes_value "Sets the global scale multiplier for annotations")
                 (@arg FONT: -f --font +takes_value "Sets the name of the font to be used")
                 (@arg DEBUG: -d --debug "Save intermediate artifacts to disk")
-                (@arg RIGHTSHOLDER_PROTECTIONS: --rightsholder-protections "EU/British compatibility mode")
             );
 
+            let app = app.arg(
+                Arg::with_name("RIGHTSHOLDER_PROTECTIONS")
+                    .long("--rightsholder-protections")
+                    .help("EU/British compatibility mode"),
+            );
+
+            // Add subcommands
+            let list_command =
+                SubCommand::with_name("list-fonts").about("List available system fonts");
             let search_command = SubCommand::with_name("search-fonts")
                 .about("Search available system fonts")
                 .arg(
@@ -56,12 +64,7 @@ impl Command {
                         .takes_value(true)
                         .help("The name or partial name of a font"),
                 );
-
-            let app = app
-                .subcommand(
-                    SubCommand::with_name("list-fonts").about("List available system fonts"),
-                )
-                .subcommand(search_command);
+            let app = app.subcommand(list_command).subcommand(search_command);
 
             // Annotation group
             let caption = Arg::with_name("CAPTION").takes_value(true);
@@ -81,12 +84,7 @@ impl Command {
                 .required(true)
                 .multiple(true)
                 .args(&["CAPTION", "TOP", "MIDDLE", "BOTTOM"]);
-            let app = app
-                .arg(caption)
-                .arg(top)
-                .arg(middle)
-                .arg(bottom)
-                .group(annotations);
+            let app = app.args(&[caption, top, middle, bottom]).group(annotations);
 
             // Format group
             let jpg = Arg::with_name("JPG")
@@ -99,7 +97,7 @@ impl Command {
                 .required(false)
                 .multiple(false)
                 .args(&["JPG", "PNG"]);
-            let app = app.arg(jpg).arg(png).group(formats);
+            let app = app.args(&[jpg, png]).group(formats);
 
             // Return args
             app.settings(&[AppSettings::SubcommandsNegateReqs])
