@@ -133,12 +133,20 @@ impl Command {
         } else {
             Format::Jpg
         };
+
         let output_path = args
             .value_of("OUTPUT")
             .map(ToOwned::to_owned)
             .unwrap_or_else(|| create_output_file_path(image, output_format))
             .into();
-        let scale = value_t_or_exit!(args.value_of("SCALE"), f32);
+
+        let scale = match args.value_of("SCALE") {
+            None => 1.0,
+            Some(scale) => match scale.parse() {
+                Ok(scale) => scale,
+                Err(_) => clap::Error::value_validation_auto("Invalid SCALE value".into()).exit(),
+            },
+        };
 
         let annotations = {
             let parser = ScaledAnnotationParser::new();
