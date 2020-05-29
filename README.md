@@ -91,9 +91,7 @@ function Invoke-Annatar {
 
 - **0.5.7** Permit selection of default font via environment var
 - **0.5.6** Fix regression: scale should be optional.
-- **0.5.5** Give up on structopt and use clap; correct clap-related bugs >.<
 - **0.5.2** Fix macOS font problem
-- **0.5.0** Switch to structopt for clap; dump `caption` as an option
 - **0.4.0** Add in-band annotation scaling
 
 ## License
