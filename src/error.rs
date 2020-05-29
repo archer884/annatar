@@ -6,6 +6,7 @@ pub enum Error {
     Image(artano::Error),
     IO(io::Error),
     Resource(ResourceError),
+    MissingFont(artano::Error),
 }
 
 impl fmt::Display for Error {
@@ -14,6 +15,14 @@ impl fmt::Display for Error {
             Error::Image(e) => write!(f, "Bad image: {}", e),
             Error::IO(e) => e.fmt(f),
             Error::Resource(e) => write!(f, "Unable to retreive the requested resource: {}", e),
+            Error::MissingFont(e) => write!(
+                f,
+                "Missing font: {}\n\
+                Hint: try searching for a font you like using annatar list-fonts. \
+                You can set a default font in your shell profile using the variable \
+                ANNATAR_DEFAULT_FONT",
+                e
+            ),
         }
     }
 }

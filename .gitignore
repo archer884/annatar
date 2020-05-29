@@ -1,6 +1,7 @@
 .DS_store
-/target/
-**/*.rs.bk
-*.png
+.env
 *.jpg
+*.png
+**/*.rs.bk
+/target/
 Thumbs.db

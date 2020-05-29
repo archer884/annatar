@@ -1,7 +1,8 @@
 use crate::config::{Annotate, Command, Format};
 use artano::{self, Canvas};
+use dotenv::dotenv;
 use font_kit::{font::Font, handle::Handle, source::SystemSource};
-use std::path::Path;
+use std::{env, path::Path};
 
 static DEFAULT_FONT_NAME: &str = "Impact";
 
@@ -23,7 +24,16 @@ fn annotate(options: Annotate) -> crate::Result<()> {
         .font_name
         .as_ref()
         .map(|name| artano::load_font(&name))
-        .unwrap_or_else(|| artano::load_font(DEFAULT_FONT_NAME))?;
+        .unwrap_or_else(|| {
+            dotenv().ok();
+            let default = env::var("ANNATAR_DEFAULT_FONT");
+            let default = default
+                .as_ref()
+                .map(AsRef::as_ref)
+                .unwrap_or(DEFAULT_FONT_NAME);
+            artano::load_font(default)
+        })
+        .map_err(|e| crate::error::Error::MissingFont(e))?;
 
     let mut canvas = Canvas::read_from_buffer(&buffer)?;
 

@@ -29,6 +29,8 @@ annatar foo.jpg "This text will appear near the bottom of the image."
 
 Images may be provided as either local paths or URLs; annatar is happy to fetch your picture from the internet for you.
 
+> Note: Linux usually does not include annatar's default font, Impact, which will result in an error unless an alternate font is selected. To avoid this, set the var `ANNATAR_DEFAULT_FONT` in your shell profile. Feel free to pick something you like.
+
 ### Annotation size
 
 By default, annatar sizes the text used for your captions on the basis of the height of the image itself. The exact algorithm used for this purpose was selected by a team of scientists working round the clock for weeks on end at the Vatican, and we didn't let them out until we saw white smoke. Rumors that the members of our text scaling enclave were able to agree only once the majority of members had starved or been bludgeoned to death by the others are, as far as you know, unfounded.
@@ -87,6 +89,7 @@ function Invoke-Annatar {
 
 ## Version history
 
+- **0.5.7** Permit selection of default font via environment var
 - **0.5.6** Fix regression: scale should be optional.
 - **0.5.5** Give up on structopt and use clap; correct clap-related bugs >.<
 - **0.5.2** Fix macOS font problem
