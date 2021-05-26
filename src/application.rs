@@ -1,8 +1,10 @@
-use crate::config::{Annotate, Command, Format};
+use std::{env, path::Path};
+
 use artano::{self, Canvas};
 use dotenv::dotenv;
 use font_kit::{font::Font, handle::Handle, source::SystemSource};
-use std::{env, path::Path};
+
+use crate::config::{Annotate, Command, Format};
 
 static DEFAULT_FONT_NAME: &str = "Impact";
 
@@ -19,7 +21,6 @@ impl App {
 }
 
 fn annotate(options: Annotate) -> crate::Result<()> {
-    let buffer = options.base_image.get()?;
     let font = options
         .font_name
         .as_ref()
@@ -33,10 +34,9 @@ fn annotate(options: Annotate) -> crate::Result<()> {
                 .unwrap_or(DEFAULT_FONT_NAME);
             artano::load_font(default)
         })
-        .map_err(|e| crate::error::Error::MissingFont(e))?;
+        .map_err(crate::error::Error::MissingFont)?;
 
-    let mut canvas = Canvas::read_from_buffer(&buffer)?;
-
+    let mut canvas = Canvas::read_from_buffer(&options.base_image.get()?)?;
     for scaled_annotation in &options.annotations {
         canvas.add_annotation(
             &scaled_annotation.annotation,
@@ -95,10 +95,11 @@ fn query_fonts(query: impl AsRef<str>) -> crate::Result<()> {
 fn font_names_from_handles(
     handles: impl IntoIterator<Item = Handle>,
 ) -> impl Iterator<Item = String> {
-    handles
-        .into_iter()
-        .filter_map(|handle| Font::from_handle(&handle).ok())
-        .filter_map(|font| font.postscript_name())
+    handles.into_iter().filter_map(|handle| {
+        Font::from_handle(&handle)
+            .ok()
+            .and_then(|font| font.postscript_name())
+    })
 }
 
 fn save_pixels<P: AsRef<Path>>(path: P, canvas: &Canvas, format: Format) -> crate::Result<()> {

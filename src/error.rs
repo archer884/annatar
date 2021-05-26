@@ -1,5 +1,6 @@
-use crate::config::ResourceError;
 use std::{error, fmt, io};
+
+use crate::config::ResourceError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -49,6 +50,7 @@ impl From<io::Error> for Error {
         Error::IO(e)
     }
 }
+
 impl From<ResourceError> for Error {
     fn from(e: ResourceError) -> Self {
         Error::Resource(e)

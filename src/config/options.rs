@@ -1,8 +1,9 @@
+use std::path::{Path, PathBuf};
+
 use crate::{
     config::resource::Resource,
     config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
 };
-use std::path::{Path, PathBuf};
 
 #[derive(Copy, Clone, Debug)]
 pub enum Format {
