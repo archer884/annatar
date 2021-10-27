@@ -19,7 +19,7 @@ Full readme available at: https://github.com/archer884/annatar
 artano = "0.3.3"
 clap = "2.33.3"
 dotenv = "0.15.0"
-font-kit = "0.10.0"
+font-kit = "0.10.1"
 regex = "1.5.4"
-reqwest = { version = "0.11.3", features = ["blocking"] }
-textwrap = { version = "0.13.4", features = ["terminal_size"] }
+reqwest = { version = "0.11.6", features = ["blocking"] }
+textwrap = { version = "0.14.2", features = ["terminal_size"] }
