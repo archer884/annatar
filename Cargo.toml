@@ -16,7 +16,7 @@ Full readme available at: https://github.com/archer884/annatar
 """
 
 [dependencies]
-artano = "0.3.3"
+artano = "0.3.5"
 clap = "2.33.3"
 dotenv = "0.15.0"
 font-kit = "0.10.1"
