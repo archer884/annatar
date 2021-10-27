@@ -24,7 +24,7 @@ fn annotate(options: Annotate) -> crate::Result<()> {
     let font = options
         .font_name
         .as_ref()
-        .map(|name| artano::load_font(&name))
+        .map(|name| artano::load_font(name))
         .unwrap_or_else(|| {
             dotenv().ok();
             let default = env::var("ANNATAR_DEFAULT_FONT");
