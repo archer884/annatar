@@ -16,10 +16,10 @@ Full readme available at: https://github.com/archer884/annatar
 """
 
 [dependencies]
-artano = "0.3.5"
-clap = "2.33.3"
+artano = "0.3.6"
+clap = { version = "3.1.18", features = ["derive"] }
 dotenv = "0.15.0"
-font-kit = "0.10.1"
-regex = "1.5.4"
-reqwest = { version = "0.11.6", features = ["blocking"] }
-textwrap = { version = "0.14.2", features = ["terminal_size"] }
+font-kit = "0.11.0"
+regex = "1.5.5"
+reqwest = { version = "0.11.10", features = ["blocking"] }
+textwrap = { version = "0.15.0", features = ["terminal_size"] }
