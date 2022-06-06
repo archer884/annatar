@@ -1,9 +1,165 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+use clap::{ArgGroup, Parser, Subcommand};
 
 use crate::{
     config::resource::Resource,
     config::scaled_annotation::{ScaledAnnotation, ScaledAnnotationParser},
 };
+
+#[derive(Clone, Debug, Parser)]
+#[clap(about, author, version)]
+pub struct Args {
+    /// image path may be in the form of a system file path or a URL
+    #[clap(required = true)]
+    image: Option<String>,
+
+    /// optional output path for annotated image (default: foo.jpg -> foo-annotated.jpg)
+    #[clap(short, long)]
+    output: Option<String>,
+
+    /// override global scale multiplier for annotations
+    #[clap(short, long)]
+    scale: Option<f32>,
+
+    /// override default font
+    #[clap(short, long)]
+    font: Option<String>,
+
+    #[clap(flatten)]
+    annotations: Annotations,
+
+    #[clap(flatten)]
+    format: Formats,
+
+    /// EU/UK compatibility mode.
+    #[clap(short, long)]
+    rightholder_protection: bool,
+
+    #[clap(subcommand)]
+    pub command: Option<Command>,
+
+    /// save intermediate artifacts to disk
+    #[clap(long)]
+    debug: bool,
+}
+
+#[derive(Clone, Debug, Parser)]
+#[clap(group(ArgGroup::new("annotation").multiple(true).required(true)))]
+pub struct Annotations {
+    /// an annotation appearing at the bottom of the image
+    #[clap(group = "annotation")]
+    pub caption: Option<String>,
+
+    /// an annotation appearing at the top of the image
+    #[clap(short, long, group = "annotation")]
+    pub top: Option<String>,
+
+    /// an annotation appearing in the middle of the image
+    #[clap(short, long, group = "annotation")]
+    pub middle: Option<String>,
+
+    /// an annotation appearing at the bottom of the image
+    #[clap(short, long, group = "annotation")]
+    pub bottom: Option<String>,
+}
+
+#[derive(Clone, Debug, Parser)]
+#[clap(group(ArgGroup::new("format").required(false)))]
+pub struct Formats {
+    /// output jpg
+    #[clap(long, group = "format")]
+    pub jpg: bool,
+
+    /// output png
+    #[clap(long, group = "format")]
+    pub png: bool,
+}
+
+#[derive(Clone, Debug, Subcommand)]
+pub enum Command {
+    /// list and search system fonts
+    Fonts {
+        /// optional font name query
+        ///
+        /// Provide a string here to search for a font with a name containing this string.
+        query: Option<String>,
+    },
+}
+
+impl Args {
+    pub fn parse() -> Self {
+        Parser::parse()
+    }
+
+    pub fn build_annotate_options(&self) -> Annotate {
+        // There are some entertaining arg parsing shenanigans taking place here. Specifically,
+        // the image parameter is marked as optional as far as the language is concerned, but it's
+        // only optional so that--in the even the arg parser detects a subcommand--we can skip the
+        // image source. We should never be able to get HERE without having already checked to see
+        // whether or not there is a subcommand, but we'll check again anyway. This will hopefully
+        // get deleted by LLVM.
+
+        if self.command.is_some() {
+            panic!("invalid operation");
+        }
+        
+        // It is vitally important to maintain compatibility with EU and UK copyright law.
+
+        if self.rightholder_protection {
+            println!(
+                "Rightsholder Protections Active\n\n\
+                    Your IP has been reported. Please turn off your PC and walk away.\n\
+                    Trust and Safety personnel have been dispatched to your location.\n\n\
+                    Have a nice day."
+            );
+            std::process::exit(1);
+        }
+
+        // As explained above, this expect call cannot fail. The image cannot NOT be here if the
+        // a command is not present, but this is a runtime thing, not a static thing.
+
+        let image = self.image.as_ref().expect("infallible");
+        let output_format = self.format();
+
+        Annotate {
+            base_image: Resource::new(image),
+            annotations: self.annotations(),
+            output_path: self.output.as_ref().map(ToOwned::to_owned).unwrap_or_else(|| create_output_file_path(image, output_format)),
+            output_format,
+            font_name: self.font.clone(),
+            debug: self.debug,
+        }
+    }
+
+    fn annotations(&self) -> Vec<ScaledAnnotation> {
+        let parser = ScaledAnnotationParser::new();
+        let scale = self.scale.unwrap_or(1.0);
+        let mut results = Vec::new();
+
+        if let Some(top) = &self.annotations.top {
+            results.push(parser.top(scale, top));
+        }
+
+        if let Some(middle) = &self.annotations.middle {
+            results.push(parser.middle(scale, middle));
+        }
+
+        if let Some(bottom) = self.annotations.caption.as_deref().or(self.annotations.bottom.as_deref()) {
+            results.push(parser.bottom(scale, bottom));
+        }
+
+        results
+    }
+
+    fn format(&self) -> Format {
+        if self.format.png {
+            Format::Png
+        } else {
+            Format::Jpg
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub enum Format {
@@ -15,170 +171,10 @@ pub enum Format {
 pub struct Annotate {
     pub base_image: Resource,
     pub annotations: Vec<ScaledAnnotation>,
-    pub output_path: PathBuf,
+    pub output_path: String,
     pub output_format: Format,
     pub font_name: Option<String>,
     pub debug: bool,
-}
-
-#[derive(Clone, Debug)]
-pub enum Command {
-    Annotate(Annotate),
-    ListFonts,
-    SearchFonts { query: String },
-}
-
-impl Command {
-    pub fn from_args() -> Self {
-        todo!()
-
-        // use clap::{
-        //     clap_app, crate_authors, crate_description, crate_version, value_t_or_exit,
-        //     AppSettings, Arg, ArgGroup, SubCommand,
-        // };
-
-        // let args = {
-        //     // Build app without annotation or format groups
-        //     let app = clap_app!(annatar =>
-        //         (version: crate_version!())
-        //         (author: crate_authors!())
-        //         (about: crate_description!())
-        //         (@arg IMAGE: +takes_value +required "Path to an image to be annotated")
-        //         (@arg OUTPUT: -o --output +takes_value "Sets an output path for the new image (default: <image path>/<image name>-annotated.<ext>")
-        //         (@arg SCALE: -s --scale +takes_value "Sets the global scale multiplier for annotations")
-        //         (@arg FONT: -f --font +takes_value "Sets the name of the font to be used")
-        //         (@arg DEBUG: -d --debug "Save intermediate artifacts to disk")
-        //     );
-
-        //     let app = app.arg(
-        //         Arg::with_name("RIGHTSHOLDER_PROTECTIONS")
-        //             .long("--rightsholder-protections")
-        //             .help("EU/British compatibility mode"),
-        //     );
-
-        //     // Add subcommands
-        //     let list_command =
-        //         SubCommand::with_name("list-fonts").about("List available system fonts");
-        //     let search_command = SubCommand::with_name("search-fonts")
-        //         .about("Search available system fonts")
-        //         .arg(
-        //             Arg::with_name("QUERY")
-        //                 .required(true)
-        //                 .takes_value(true)
-        //                 .help("The name or partial name of a font"),
-        //         );
-        //     let app = app.subcommand(list_command).subcommand(search_command);
-
-        //     // Annotation group
-        //     let caption = Arg::with_name("CAPTION").takes_value(true);
-        //     let top = Arg::with_name("TOP")
-        //         .takes_value(true)
-        //         .short('t')
-        //         .long("top");
-        //     let middle = Arg::with_name("MIDDLE")
-        //         .takes_value(true)
-        //         .short('m')
-        //         .long("middle");
-        //     let bottom = Arg::with_name("BOTTOM")
-        //         .takes_value(true)
-        //         .short('b')
-        //         .long("bottom");
-        //     let annotations = ArgGroup::with_name("ANNOTATIONS")
-        //         .required(true)
-        //         .multiple(true)
-        //         .args(&["CAPTION", "TOP", "MIDDLE", "BOTTOM"]);
-        //     let app = app.args(&[caption, top, middle, bottom]).group(annotations);
-
-        //     // Format group
-        //     let jpg = Arg::with_name("JPG")
-        //         .long("jpg")
-        //         .help("Sets output to JPG format");
-        //     let png = Arg::with_name("PNG")
-        //         .long("png")
-        //         .help("Sets output to PNG format");
-        //     let formats = ArgGroup::with_name("FORMATS")
-        //         .required(false)
-        //         .multiple(false)
-        //         .args(&["JPG", "PNG"]);
-        //     let app = app.args(&[jpg, png]).group(formats);
-
-        //     // Return args
-        //     app.settings(&[AppSettings::SubcommandsNegateReqs])
-        //         .get_matches()
-        // };
-
-        // // List fonts
-        // if args.subcommand_matches("list-fonts").is_some() {
-        //     return Command::ListFonts;
-        // }
-
-        // // Search fonts
-        // if let Some(cmd) = args.subcommand_matches("search-fonts") {
-        //     return Command::SearchFonts {
-        //         query: value_t_or_exit!(cmd.value_of("QUERY"), String),
-        //     };
-        // }
-
-        // // Annotate
-        // if args.is_present("RIGHTSHOLDER_PROTECTIONS") {
-        //     println!(
-        //         "Rightsholder Protections Active\n\n\
-        //         Your IP has been reported. Please turn off your PC and walk away.\n\
-        //         Trust and Safety personnel have been dispatched to your location.\n\n\
-        //         Have a nice day."
-        //     );
-        //     std::process::exit(1);
-        // }
-
-        // let image = args.value_of("IMAGE").unwrap();
-        // let output_format = if args.is_present("PNG") {
-        //     Format::Png
-        // } else {
-        //     Format::Jpg
-        // };
-
-        // let output_path = args
-        //     .value_of("OUTPUT")
-        //     .map(ToOwned::to_owned)
-        //     .unwrap_or_else(|| create_output_file_path(image, output_format))
-        //     .into();
-
-        // let scale = match args.value_of("SCALE") {
-        //     None => 1.0,
-        //     Some(scale) => match scale.parse() {
-        //         Ok(scale) => scale,
-        //         Err(_) => clap::Error::value_validation_auto("Invalid SCALE value".into()).exit(),
-        //     },
-        // };
-
-        // let annotations = {
-        //     let parser = ScaledAnnotationParser::new();
-        //     let mut results = Vec::new();
-
-        //     if let Some(x) = args.value_of("TOP") {
-        //         results.push(parser.top(scale, x));
-        //     }
-
-        //     if let Some(x) = args.value_of("MIDDLE") {
-        //         results.push(parser.middle(scale, x));
-        //     }
-
-        //     if let Some(x) = args.value_of("BOTTOM").or_else(|| args.value_of("CAPTION")) {
-        //         results.push(parser.bottom(scale, x));
-        //     }
-
-        //     results
-        // };
-
-        // Command::Annotate(Annotate {
-        //     base_image: Resource::new(image),
-        //     annotations,
-        //     output_path,
-        //     output_format,
-        //     font_name: args.value_of("FONT").map(ToOwned::to_owned),
-        //     debug: args.is_present("DEBUG"),
-        // })
-    }
 }
 
 fn create_output_file_path(path: impl AsRef<Path>, format: Format) -> String {

@@ -4,19 +4,27 @@ use artano::{self, Canvas};
 use dotenv::dotenv;
 use font_kit::{font::Font, handle::Handle, source::SystemSource};
 
-use crate::config::{Annotate, Command, Format};
+use crate::config::{Annotate, Args, Command, Format};
 
 static DEFAULT_FONT_NAME: &str = "Impact";
 
 pub struct App;
 
 impl App {
-    pub fn run(&self, command: Command) -> crate::Result<()> {
-        match command {
-            Command::Annotate(options) => annotate(options),
-            Command::ListFonts => list_fonts(),
-            Command::SearchFonts { query } => query_fonts(query),
+    pub fn run(&self, args: &Args) -> crate::Result<()> {
+        if let Some(command) = &args.command {
+            return dispatch(command);
         }
+        annotate(args.build_annotate_options())
+    }
+}
+
+fn dispatch(command: &Command) -> crate::Result<()> {
+    match command {
+        Command::Fonts { query } => match query {
+            Some(query) => query_fonts(query),
+            None => list_fonts(),
+        },
     }
 }
 
