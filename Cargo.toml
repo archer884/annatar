@@ -1,6 +1,6 @@
 [package]
 name = "annatar"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2018"
 authors = ["J/A <archer884@gmail.com>"]
 license = "MIT/Apache-2.0"
@@ -16,10 +16,10 @@ Full readme available at: https://github.com/archer884/annatar
 """
 
 [dependencies]
-artano = "0.3.6"
-clap = { version = "3.1.18", features = ["derive"] }
+artano = "0.3.7"
+clap = { version = "3.2.17", features = ["derive"] }
 dotenv = "0.15.0"
 font-kit = "0.11.0"
-regex = "1.5.6"
-reqwest = { version = "0.11.10", features = ["blocking"] }
+regex = "1.6.0"
+reqwest = { version = "0.11.11", features = ["blocking"] }
 textwrap = { version = "0.15.0", features = ["terminal_size"] }
