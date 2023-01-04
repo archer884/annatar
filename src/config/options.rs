@@ -8,71 +8,71 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Parser)]
-#[clap(about, author, version)]
+#[command(about, author, version)]
 pub struct Args {
     /// image path may be in the form of a system file path or a URL
-    #[clap(required = true)]
+    #[arg(required = true)]
     image: Option<String>,
 
     /// optional output path for annotated image (default: foo.jpg -> foo-annotated.jpg)
-    #[clap(short, long)]
+    #[arg(short, long)]
     output: Option<String>,
 
     /// override global scale multiplier for annotations
-    #[clap(short, long)]
+    #[arg(short, long)]
     scale: Option<f32>,
 
     /// override default font
-    #[clap(short, long)]
+    #[arg(short, long)]
     font: Option<String>,
 
-    #[clap(flatten)]
+    #[command(flatten)]
     annotations: Annotations,
 
-    #[clap(flatten)]
+    #[command(flatten)]
     format: Formats,
 
     /// EU/UK compatibility mode.
-    #[clap(short, long)]
+    #[arg(short, long)]
     rightholder_protection: bool,
 
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub command: Option<Command>,
 
     /// save intermediate artifacts to disk
-    #[clap(long)]
+    #[arg(long)]
     debug: bool,
 }
 
 #[derive(Clone, Debug, Parser)]
-#[clap(group(ArgGroup::new("annotation").multiple(true).required(true)))]
+#[command(group(ArgGroup::new("annotation").multiple(true).required(true)))]
 pub struct Annotations {
     /// an annotation appearing at the bottom of the image
-    #[clap(group = "annotation")]
+    #[arg(group = "annotation")]
     pub caption: Option<String>,
 
     /// an annotation appearing at the top of the image
-    #[clap(short, long, group = "annotation")]
+    #[arg(short, long, group = "annotation")]
     pub top: Option<String>,
 
     /// an annotation appearing in the middle of the image
-    #[clap(short, long, group = "annotation")]
+    #[arg(short, long, group = "annotation")]
     pub middle: Option<String>,
 
     /// an annotation appearing at the bottom of the image
-    #[clap(short, long, group = "annotation")]
+    #[arg(short, long, group = "annotation")]
     pub bottom: Option<String>,
 }
 
 #[derive(Clone, Debug, Parser)]
-#[clap(group(ArgGroup::new("format").required(false)))]
+#[command(group(ArgGroup::new("format").required(false)))]
 pub struct Formats {
     /// output jpg
-    #[clap(long, group = "format")]
+    #[arg(long, group = "format")]
     pub jpg: bool,
 
     /// output png
-    #[clap(long, group = "format")]
+    #[arg(long, group = "format")]
     pub png: bool,
 }
 
