@@ -15,6 +15,9 @@ A command line tool for making memes.
 Full readme available at: https://github.com/archer884/annatar
 """
 
+[profile.release]
+lto = "thin"
+
 [dependencies]
 artano = "0.3.8"
 clap = { version = "4.1.8", features = ["derive"] }
