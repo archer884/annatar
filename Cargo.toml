@@ -1,6 +1,6 @@
 [package]
 name = "annatar"
-version = "0.6.5"
+version = "0.6.6"
 edition = "2021"
 authors = ["J/A <archer884@gmail.com>"]
 license = "MIT/Apache-2.0"
@@ -20,7 +20,7 @@ lto = "thin"
 
 [dependencies]
 artano = "0.3.9"
-clap = { version = "4.2.1", features = ["derive"] }
+clap = { version = "4.2.2", features = ["derive"] }
 dotenv = "0.15.0"
 font-kit = "0.11.0"
 regex = "1.7.3"
