@@ -103,7 +103,7 @@ impl Args {
         if self.command.is_some() {
             panic!("invalid operation");
         }
-        
+
         // It is vitally important to maintain compatibility with EU and UK copyright law.
 
         if self.rightholder_protection {
@@ -125,7 +125,11 @@ impl Args {
         Annotate {
             base_image: Resource::new(image),
             annotations: self.annotations(),
-            output_path: self.output.as_ref().map(ToOwned::to_owned).unwrap_or_else(|| create_output_file_path(image, output_format)),
+            output_path: self
+                .output
+                .as_ref()
+                .map(ToOwned::to_owned)
+                .unwrap_or_else(|| create_output_file_path(image, output_format)),
             output_format,
             font_name: self.font.clone(),
             debug: self.debug,
@@ -145,7 +149,12 @@ impl Args {
             results.push(parser.middle(scale, middle));
         }
 
-        if let Some(bottom) = self.annotations.caption.as_deref().or(self.annotations.bottom.as_deref()) {
+        if let Some(bottom) = self
+            .annotations
+            .caption
+            .as_deref()
+            .or(self.annotations.bottom.as_deref())
+        {
             results.push(parser.bottom(scale, bottom));
         }
 
