@@ -1,6 +1,6 @@
 [package]
 name = "annatar"
-version = "0.6.8"
+version = "0.6.9"
 edition = "2021"
 authors = ["J/A <archer884@gmail.com>"]
 license = "MIT/Apache-2.0"
@@ -16,7 +16,12 @@ Full readme available at: https://github.com/archer884/annatar
 """
 
 [profile.release]
-lto = "thin"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+debug = 0
 
 [dependencies]
 artano = "0.3.10"
