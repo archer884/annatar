@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Parser)]
-#[command(about, author, version)]
+#[command(about, author, version, subcommand_negates_reqs(true))]
 pub struct Args {
     /// image path may be in the form of a system file path or a URL
     #[arg(required = true)]
@@ -38,10 +38,6 @@ pub struct Args {
 
     #[command(subcommand)]
     pub command: Option<Command>,
-
-    /// save intermediate artifacts to disk
-    #[arg(long)]
-    debug: bool,
 }
 
 #[derive(Clone, Debug, Parser)]
@@ -132,7 +128,6 @@ impl Args {
                 .unwrap_or_else(|| create_output_file_path(image, output_format)),
             output_format,
             font_name: self.font.clone(),
-            debug: self.debug,
         }
     }
 
@@ -183,7 +178,6 @@ pub struct Annotate {
     pub output_path: String,
     pub output_format: Format,
     pub font_name: Option<String>,
-    pub debug: bool,
 }
 
 fn create_output_file_path(path: impl AsRef<Path>, format: Format) -> String {
