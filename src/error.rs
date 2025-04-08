@@ -19,7 +19,7 @@ impl fmt::Display for Error {
             Error::MissingFont(e) => write!(
                 f,
                 "Missing font: {}\n\
-                Hint: try searching for a font you like using annatar list-fonts. \
+                Hint: try searching for a font you like using annatar fonts \
                 You can set a default font in your shell profile using the variable \
                 ANNATAR_DEFAULT_FONT",
                 e
