@@ -1,2 +1,5 @@
 [build]
 rustflags = ["-Clink-arg=-fuse-ld=lld", "-Ctarget-cpu=native"]
+
+[env]
+MACOSX_DEPLOYMENT_TARGET = "11.0"
